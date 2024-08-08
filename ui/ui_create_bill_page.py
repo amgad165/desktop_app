@@ -37,6 +37,7 @@ class Ui_CreateBillPage(object):
         self.inputsStackedWidget.setObjectName("inputsStackedWidget")
         self.leftLayout.addWidget(self.inputsStackedWidget)
 
+
         # Info inputs
         self.infoPage = QtWidgets.QWidget()
         self.infoPage.setObjectName("infoPage")
@@ -75,29 +76,95 @@ class Ui_CreateBillPage(object):
         self.orderPage.setObjectName("orderPage")
         self.orderLayout = QtWidgets.QVBoxLayout(self.orderPage)
 
-        # Container for order section with background color
+        # Inputs section above orderContainer
+        self.inputsSection = QtWidgets.QWidget()
+        self.inputsSectionLayout = QtWidgets.QVBoxLayout(self.inputsSection)
+
+        self.inputsSection.setContentsMargins(0, 70, 0, 0)
+        self.inputsSection.setObjectName("inputsSection")
+
+        # Kapitel and Unterkapitel
+        self.kapitelUnterkapitelLayout = QtWidgets.QHBoxLayout()
+        
+        self.kapitelLabel = QtWidgets.QLabel("Kapitel")
+        self.kapitelInput = QtWidgets.QLineEdit(self.inputsSection)
+        self.kapitelInput.setPlaceholderText("Kapitel")
+        self.kapitelUnterkapitelLayout.addWidget(self.kapitelLabel)
+        self.kapitelUnterkapitelLayout.addWidget(self.kapitelInput)
+
+        self.unterkapitelLabel = QtWidgets.QLabel("Unterkapitel")
+        self.unterkapitelInput = QtWidgets.QLineEdit(self.inputsSection)
+        self.unterkapitelInput.setPlaceholderText("Unterkapitel")
+        self.kapitelUnterkapitelLayout.addWidget(self.unterkapitelLabel)
+        self.kapitelUnterkapitelLayout.addWidget(self.unterkapitelInput)
+        self.inputsSectionLayout.addLayout(self.kapitelUnterkapitelLayout)
+
+        # Preis netto and Rabatt in %
+        self.preisRabattLayout = QtWidgets.QHBoxLayout()
+        
+        self.preisNettoLabel = QtWidgets.QLabel("Preis netto")
+        self.preisNettoInput = QtWidgets.QLineEdit(self.inputsSection)
+        self.preisNettoInput.setPlaceholderText("Preis netto")
+        self.preisRabattLayout.addWidget(self.preisNettoLabel)
+        self.preisRabattLayout.addWidget(self.preisNettoInput)
+
+        self.rabattLabel = QtWidgets.QLabel("Rabatt in %")
+        self.rabattInput = QtWidgets.QLineEdit(self.inputsSection)
+        self.rabattInput.setPlaceholderText("Rabatt in %")
+        self.preisRabattLayout.addWidget(self.rabattLabel)
+        self.preisRabattLayout.addWidget(self.rabattInput)
+        self.inputsSectionLayout.addLayout(self.preisRabattLayout)
+
+        # Menge, Einheit, MwSt. in %, Summe Netto
+        self.mengeEinheitLayout = QtWidgets.QHBoxLayout()
+        
+        self.mengeLabel = QtWidgets.QLabel("Menge")
+        self.mengeInput = QtWidgets.QLineEdit(self.inputsSection)
+        self.mengeInput.setPlaceholderText("Menge")
+        self.mengeEinheitLayout.addWidget(self.mengeLabel)
+        self.mengeEinheitLayout.addWidget(self.mengeInput)
+
+        self.einheitLabel = QtWidgets.QLabel("Einheit")
+        self.einheitInput = QtWidgets.QLineEdit(self.inputsSection)
+        self.einheitInput.setPlaceholderText("Einheit")
+        self.mengeEinheitLayout.addWidget(self.einheitLabel)
+        self.mengeEinheitLayout.addWidget(self.einheitInput)
+
+        self.mwstLabel = QtWidgets.QLabel("MwSt. in %")
+        self.mwstInput = QtWidgets.QLineEdit(self.inputsSection)
+        self.mwstInput.setPlaceholderText("MwSt. in %")
+        self.mengeEinheitLayout.addWidget(self.mwstLabel)
+        self.mengeEinheitLayout.addWidget(self.mwstInput)
+
+        self.summeNettoLabel = QtWidgets.QLabel("Summe Netto")
+        self.summeNettoInput = QtWidgets.QLineEdit(self.inputsSection)
+        self.summeNettoInput.setPlaceholderText("Summe Netto")
+        self.mengeEinheitLayout.addWidget(self.summeNettoLabel)
+        self.mengeEinheitLayout.addWidget(self.summeNettoInput)
+
+        self.inputsSectionLayout.addLayout(self.mengeEinheitLayout)
+        self.orderLayout.addWidget(self.inputsSection)
+
+        # Order container
         self.orderContainer = QtWidgets.QWidget(self.orderPage)
         self.orderContainer.setObjectName("orderContainer")
         self.orderContainerLayout = QtWidgets.QVBoxLayout(self.orderContainer)
-        self.orderContainerLayout.setContentsMargins(0, 0, 0, 0)
-        self.orderContainer.setObjectName("orderContainer")
-
-        # Number of Products input
-        self.numProductsInput = QtWidgets.QLineEdit(self.orderContainer)
-        self.numProductsInput.setPlaceholderText("Number of Products")
-        self.orderLayout.addWidget(self.numProductsInput)
+        self.orderContainerLayout.setContentsMargins(10, 120, 10, 10)
+        self.orderContainerLayout.setSpacing(10)  # Remove space between elements
+        self.orderContainerLayout.setAlignment(QtCore.Qt.AlignTop)  # Center the content
 
 
-        
-
+        # Search input and product table
         self.orderSearchInput = QtWidgets.QLineEdit(self.orderContainer)
         self.orderSearchInput.setPlaceholderText("Search Product Name")
+        self.orderSearchInput.setObjectName("orderSearch")
         self.orderContainerLayout.addWidget(self.orderSearchInput)
-
-        # Table widget for Product display
+        
         self.productTable = QtWidgets.QTableWidget(self.orderContainer)
         self.productTable.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.productTable.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.productTable.setObjectName("orderTable")
+
         self.productTable.setColumnCount(3)
         self.productTable.setHorizontalHeaderLabels(["CodeNr", "Name", "SalesPrice"])
         

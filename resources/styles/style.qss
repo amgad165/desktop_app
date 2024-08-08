@@ -471,8 +471,11 @@ QLabel:selected {
 #orderContainer{
 	background-color: #1A3636;
 	padding: 10px;
-}
 
+	margin-top: 70px;
+	margin-bottom: 100px;
+
+}
 
     QTableWidget {
         background-color: #333;

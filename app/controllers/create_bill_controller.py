@@ -103,8 +103,14 @@ class CreateBillController:
     def update_pdf_viewer(self):
         # Add the currently selected products to the main list
         for product in self.current_selection:
-            if product not in self.selected_products:
-                self.selected_products.append(product)
+            menge_value = self.create_bill_page_ui.mengeInput.text() if self.create_bill_page_ui.mengeInput.text() else ''  # Get Menge value
+            if menge_value:  # If Menge has a value
+                product_with_menge = (product[0], menge_value, product[1], product[2])  # Arrange columns as (CodeNr, Menge, Name, SalesPrice)
+            else:
+                product_with_menge = (product[0], '', product[1], product[2])  # Arrange columns as (CodeNr, Menge, Name, SalesPrice)
+
+            if product_with_menge not in self.selected_products:
+                self.selected_products.append(product_with_menge)
 
         # Collect input data for Info
         name = self.create_bill_page_ui.nameInput.text()
@@ -164,8 +170,9 @@ class CreateBillController:
         # Table headers with background color
         pdf.set_fill_color(200, 220, 255)  # Light blue background
         pdf.set_font('Arial', 'B', 12)
-        pdf.cell(40, 10, 'CodeNr', 1, 0, 'C', 1)
-        pdf.cell(80, 10, 'Name', 1, 0, 'C', 1)
+        pdf.cell(40, 10, 'CodeNr', 1, 0, 'C', 1)  # CodeNr column
+        pdf.cell(40, 10, 'Menge', 1, 0, 'C', 1)  # Menge column
+        pdf.cell(60, 10, 'Name', 1, 0, 'C', 1)
         pdf.cell(40, 10, 'SalesPrice', 1, 1, 'C', 1)
 
         # Reset font for table rows
@@ -174,9 +181,10 @@ class CreateBillController:
 
         # Adding the selected products to the PDF table
         for product in selected_products:
-            pdf.cell(40, 10, product[0], 1, 0, 'C', 1)
-            pdf.cell(80, 10, product[1], 1, 0, 'C', 1)
-            pdf.cell(40, 10, product[2], 1, 1, 'C', 1)
+            pdf.cell(40, 10, product[0], 1, 0, 'C', 1)  # CodeNr
+            pdf.cell(40, 10, product[1], 1, 0, 'C', 1)  # Menge
+            pdf.cell(60, 10, product[2], 1, 0, 'C', 1)  # Name
+            pdf.cell(40, 10, product[3], 1, 1, 'C', 1)  # SalesPrice
 
         pdf.output(pdf_path)
 
