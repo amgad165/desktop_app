@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QSizePolicy
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1400, 800)
+        MainWindow.resize(1600, 850)
         
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")

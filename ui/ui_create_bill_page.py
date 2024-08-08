@@ -21,18 +21,25 @@ class Ui_CreateBillPage(object):
 
         # Buttons for sections
         self.infoButton = QtWidgets.QPushButton("Info", self.leftWidget)
+        self.infoButton.setObjectName("infoButton")
         self.buttonsLayout.addWidget(self.infoButton)
+        
         self.addressButton = QtWidgets.QPushButton("Address", self.leftWidget)
+        self.addressButton.setObjectName("addressButton")
         self.buttonsLayout.addWidget(self.addressButton)
+        
         self.orderButton = QtWidgets.QPushButton("Order", self.leftWidget)
+        self.orderButton.setObjectName("orderButton")
         self.buttonsLayout.addWidget(self.orderButton)
 
         # StackedWidget for different inputs
         self.inputsStackedWidget = QtWidgets.QStackedWidget(self.leftWidget)
+        self.inputsStackedWidget.setObjectName("inputsStackedWidget")
         self.leftLayout.addWidget(self.inputsStackedWidget)
 
         # Info inputs
         self.infoPage = QtWidgets.QWidget()
+        self.infoPage.setObjectName("infoPage")
         self.infoLayout = QtWidgets.QVBoxLayout(self.infoPage)
         self.nameInput = QtWidgets.QLineEdit(self.infoPage)
         self.nameInput.setPlaceholderText("Name")
@@ -43,10 +50,14 @@ class Ui_CreateBillPage(object):
         self.emailInput = QtWidgets.QLineEdit(self.infoPage)
         self.emailInput.setPlaceholderText("Email")
         self.infoLayout.addWidget(self.emailInput)
+        self.addInfoButton = QtWidgets.QPushButton("Add Info", self.infoPage)
+        self.addInfoButton.setObjectName("addInfoButton")
+        self.infoLayout.addWidget(self.addInfoButton)
         self.inputsStackedWidget.addWidget(self.infoPage)
 
         # Address inputs
         self.addressPage = QtWidgets.QWidget()
+        self.addressPage.setObjectName("addressPage")
         self.addressLayout = QtWidgets.QVBoxLayout(self.addressPage)
         self.addressInput = QtWidgets.QLineEdit(self.addressPage)
         self.addressInput.setPlaceholderText("Address")
@@ -54,36 +65,69 @@ class Ui_CreateBillPage(object):
         self.phoneNumberInput = QtWidgets.QLineEdit(self.addressPage)
         self.phoneNumberInput.setPlaceholderText("Phone Number")
         self.addressLayout.addWidget(self.phoneNumberInput)
+        self.addAddressDataButton = QtWidgets.QPushButton("Add Address Data", self.addressPage)
+        self.addAddressDataButton.setObjectName("addAddressDataButton")
+        self.addressLayout.addWidget(self.addAddressDataButton)
         self.inputsStackedWidget.addWidget(self.addressPage)
 
         # Order inputs
         self.orderPage = QtWidgets.QWidget()
+        self.orderPage.setObjectName("orderPage")
         self.orderLayout = QtWidgets.QVBoxLayout(self.orderPage)
-        self.orderSearchInput = QtWidgets.QLineEdit(self.orderPage)
+
+        # Container for order section with background color
+        self.orderContainer = QtWidgets.QWidget(self.orderPage)
+        self.orderContainer.setObjectName("orderContainer")
+        self.orderContainerLayout = QtWidgets.QVBoxLayout(self.orderContainer)
+        self.orderContainerLayout.setContentsMargins(0, 0, 0, 0)
+        self.orderContainer.setObjectName("orderContainer")
+
+        # Number of Products input
+        self.numProductsInput = QtWidgets.QLineEdit(self.orderContainer)
+        self.numProductsInput.setPlaceholderText("Number of Products")
+        self.orderLayout.addWidget(self.numProductsInput)
+
+
+        
+
+        self.orderSearchInput = QtWidgets.QLineEdit(self.orderContainer)
         self.orderSearchInput.setPlaceholderText("Search Product Name")
-        self.orderLayout.addWidget(self.orderSearchInput)
+        self.orderContainerLayout.addWidget(self.orderSearchInput)
 
         # Table widget for Product display
-        self.productTable = QtWidgets.QTableWidget(self.orderPage)
+        self.productTable = QtWidgets.QTableWidget(self.orderContainer)
         self.productTable.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.productTable.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.productTable.setColumnCount(3)
         self.productTable.setHorizontalHeaderLabels(["CodeNr", "Name", "SalesPrice"])
         
         # Adjusting the table size and column width
-        self.productTable.setFixedHeight(150)  # Adjust the table height as needed
+        self.productTable.setFixedHeight(180)  # Adjust the table height as needed
         self.productTable.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
         self.productTable.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
         self.productTable.horizontalHeader().setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
-        # self.productTable.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.orderContainerLayout.addWidget(self.productTable)
 
-        self.orderLayout.addWidget(self.productTable)
+        # Add entity and remove last row buttons on the same horizontal line
+        self.buttonsHorizontalLayout = QtWidgets.QHBoxLayout()
+        self.addEntityButton = QtWidgets.QPushButton(self.orderContainer)
+        self.addEntityButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
+        self.addEntityButton.setText("Add entity")
+        self.buttonsHorizontalLayout.addWidget(self.addEntityButton)
+        
+        self.removeLastRowButton = QtWidgets.QPushButton(self.orderContainer)
+        self.removeLastRowButton.setIcon(QtGui.QIcon('resources/icons/x.png'))
+        self.removeLastRowButton.setText("Remove last row")
+        self.buttonsHorizontalLayout.addWidget(self.removeLastRowButton)
+        
+        self.orderContainerLayout.addLayout(self.buttonsHorizontalLayout)
+
+        self.orderLayout.addWidget(self.orderContainer)
         self.inputsStackedWidget.addWidget(self.orderPage)
 
-        # Submit and export buttons
-        self.submitButton = QtWidgets.QPushButton("Submit", self.leftWidget)
-        self.leftLayout.addWidget(self.submitButton)
+        # Export button (only for info and address tabs)
         self.exportButton = QtWidgets.QPushButton("Export to PDF", self.leftWidget)
+        self.exportButton.setObjectName("exportButton")
         self.leftLayout.addWidget(self.exportButton)
         
         self.horizontalLayout.addWidget(self.leftWidget)

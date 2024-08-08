@@ -13,19 +13,39 @@ class CreateBillController:
         self.create_bill_page_ui.setupUi(self.create_bill_page)
         
         self.selected_products = []
+        self.current_selection = []
 
+        self.connections_setup = False  # Flag to ensure connections are only set up once
         self.setup_connections()
         self.load_products()
         self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.infoPage)
     
     def setup_connections(self):
-        self.create_bill_page_ui.submitButton.clicked.connect(self.update_pdf_viewer)
+        if self.connections_setup:
+            return  # Avoid setting up connections more than once
+
+        self.connections_setup = True  # Set the flag to True after setting up connections
+
+        # Connect buttons
+        self.create_bill_page_ui.addEntityButton.clicked.connect(self.update_pdf_viewer)  # Add Entity button
         self.create_bill_page_ui.exportButton.clicked.connect(self.export_pdf)
+        
+        # Info page connections
         self.create_bill_page_ui.infoButton.clicked.connect(lambda: self.show_inputs("info"))
+        self.create_bill_page_ui.addInfoButton.clicked.connect(self.update_pdf_viewer)  # Add Info button
+        
+        # Address page connections
         self.create_bill_page_ui.addressButton.clicked.connect(lambda: self.show_inputs("address"))
+        self.create_bill_page_ui.addAddressDataButton.clicked.connect(self.update_pdf_viewer)  # Add Address Data button
+        
+        # Order page connections
         self.create_bill_page_ui.orderButton.clicked.connect(lambda: self.show_inputs("order"))
         self.create_bill_page_ui.orderSearchInput.textChanged.connect(self.filter_products)
         self.create_bill_page_ui.productTable.itemSelectionChanged.connect(self.update_selected_products)
+        self.create_bill_page_ui.removeLastRowButton.clicked.connect(self.handle_remove_last_row)
+
+        # Print debug statements
+        print("Connections have been set up.")
 
     def show_inputs(self, section):
         if section == "info":
@@ -49,10 +69,14 @@ class CreateBillController:
             QMessageBox.critical(self.create_bill_page, "Database Error", f"Could not load products: {e}")
 
     def filter_products(self):
-        search_term = self.create_bill_page_ui.orderSearchInput.text().lower()
-        filtered_products = [product for product in self.products if search_term in product[1].lower()]
-        self.display_products(filtered_products)
-
+        filter_text = self.create_bill_page_ui.orderSearchInput.text().lower()
+        for row in range(self.create_bill_page_ui.productTable.rowCount()):
+            item = self.create_bill_page_ui.productTable.item(row, 1)
+            if filter_text in item.text().lower():
+                self.create_bill_page_ui.productTable.setRowHidden(row, False)
+            else:
+                self.create_bill_page_ui.productTable.setRowHidden(row, True)
+                
     def display_products(self, products):
         self.create_bill_page_ui.productTable.setRowCount(0)
         for product in products:
@@ -62,9 +86,9 @@ class CreateBillController:
                 self.create_bill_page_ui.productTable.setItem(row_position, col, QTableWidgetItem(str(data)))
 
     def update_selected_products(self):
+        print("update_selected_products called")
         selected_rows = self.create_bill_page_ui.productTable.selectionModel().selectedRows()
-        selected_data = []
-
+        self.current_selection = []
         for row in selected_rows:
             row_data = []
             for column in range(self.create_bill_page_ui.productTable.columnCount()):
@@ -72,36 +96,45 @@ class CreateBillController:
                 if item:
                     row_data.append(item.text())
             if row_data:
-                selected_data.append(tuple(row_data))
+                self.current_selection.append(tuple(row_data))
 
-        self.selected_products = selected_data
-        print("Selected products:", self.selected_products)
+        print("Current selection:", self.current_selection)
 
     def update_pdf_viewer(self):
+        # Add the currently selected products to the main list
+        for product in self.current_selection:
+            if product not in self.selected_products:
+                self.selected_products.append(product)
+
+        # Collect input data for Info
         name = self.create_bill_page_ui.nameInput.text()
         age = self.create_bill_page_ui.ageInput.text()
         email = self.create_bill_page_ui.emailInput.text()
+
+        # Collect input data for Address
         address = self.create_bill_page_ui.addressInput.text()
         phone_number = self.create_bill_page_ui.phoneNumberInput.text()
 
+        # Path to save the PDF
         self.pdf_path = 'bill.pdf'
 
-        # Generate the PDF
+        # Generate the PDF with updated selected products
         self.generate_pdf(self.pdf_path, name, age, email, address, phone_number, self.selected_products)
 
         # Load the created PDF into the PDF viewer
         self.create_bill_page_ui.pdfViewer.load_pdf(self.pdf_path)
-    
-    def export_pdf(self):
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(self.create_bill_page, "Save PDF", "", "PDF Files (*.pdf);;All Files (*)", options=options)
-        if file_path:
-            if not file_path.endswith('.pdf'):
-                file_path += '.pdf'
-            copyfile(self.pdf_path, file_path)
-            QMessageBox.information(self.create_bill_page, "Export Successful", f"PDF exported successfully to {file_path}")
 
-    def generate_pdf(self, pdf_path):
+    def handle_remove_last_row(self):
+        print('handle_remove_last_row called')
+        if self.selected_products:
+            self.selected_products.pop()  # Remove last product from selected list
+            self.current_selection = []
+            self.update_pdf_viewer()  # Regenerate PDF with updated list
+            print('Row removed. Remaining products:', self.selected_products)
+        else:
+            QMessageBox.warning(self.create_bill_page, 'Remove Error', 'No rows to remove from PDF.')
+
+    def generate_pdf(self, pdf_path, name, age, email, address, phone_number, selected_products):
         class PDF(FPDF):
             def header(self):
                 self.set_font('Arial', 'B', 12)
@@ -110,20 +143,48 @@ class CreateBillController:
         pdf = PDF()
         pdf.add_page()
         pdf.set_font('Arial', '', 12)
+
+        # Info section (left side)
+        pdf.cell(0, 10, f'Name: {name}', 0, 1)
+        pdf.cell(0, 10, f'Age: {age}', 0, 1)
+        pdf.cell(0, 10, f'Email: {email}', 0, 1)
         
-        # Info section
-        pdf.set_x(10)  # Left alignment
-        pdf.cell(0, 10, f'Name: {self.data["info"]["Name"]}', 0, 1)
-        pdf.cell(0, 10, f'Age: {self.data["info"]["Age"]}', 0, 1)
-        pdf.cell(0, 10, f'Email: {self.data["info"]["Email"]}', 0, 1)
-        
-        # Address section
-        pdf.set_x(pdf.w / 2 - 30)  # Center alignment
-        pdf.cell(0, 10, f'Address: {self.data["address"]["Address"]}', 0, 1)
-        pdf.cell(0, 10, f'Phone Number: {self.data["address"]["Phone Number"]}', 0, 1)
-        
-        # Order section
-        pdf.set_x(pdf.w - 70)  # Right alignment
-        pdf.cell(0, 10, f'Order Date: {self.data["order"]["Order Date"]}', 0, 1)
+        pdf.ln(10)  # Add some space
+
+        # Address section (center)
+        pdf.cell(0, 10, f'Address: {address}', 0, 1)
+        pdf.cell(0, 10, f'Phone Number: {phone_number}', 0, 1)
+
+        pdf.ln(10)  # Add some space
+
+        # Order section (right side)
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, 'Order:', 0, 1)
+
+        # Table headers with background color
+        pdf.set_fill_color(200, 220, 255)  # Light blue background
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(40, 10, 'CodeNr', 1, 0, 'C', 1)
+        pdf.cell(80, 10, 'Name', 1, 0, 'C', 1)
+        pdf.cell(40, 10, 'SalesPrice', 1, 1, 'C', 1)
+
+        # Reset font for table rows
+        pdf.set_font('Arial', '', 12)
+        pdf.set_fill_color(240, 240, 240)  # Light gray background for rows
+
+        # Adding the selected products to the PDF table
+        for product in selected_products:
+            pdf.cell(40, 10, product[0], 1, 0, 'C', 1)
+            pdf.cell(80, 10, product[1], 1, 0, 'C', 1)
+            pdf.cell(40, 10, product[2], 1, 1, 'C', 1)
 
         pdf.output(pdf_path)
+
+    def export_pdf(self):
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(self.create_bill_page, "Save PDF", "", "PDF Files (*.pdf);;All Files (*)", options=options)
+        if file_path:
+            if not file_path.endswith('.pdf'):
+                file_path += '.pdf'
+            copyfile(self.pdf_path, file_path)
+            QMessageBox.information(self.create_bill_page, "Export Successful", f"PDF exported successfully to {file_path}")

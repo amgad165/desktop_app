@@ -468,3 +468,26 @@ QLabel:selected {
 }
 
 
+#orderContainer{
+	background-color: #1A3636;
+	padding: 10px;
+}
+
+
+    QTableWidget {
+        background-color: #333;
+        color: #FFF;
+        gridline-color: #444;
+		padding:10px;
+    }
+    QTableWidget::item {
+        padding: 5px;
+    }
+    QHeaderView::section {
+        background-color: #555;
+        color: #FFF;
+        border: 1px solid #666;
+    }
+    QTableCornerButton::section {
+        background-color: #555;
+    }
