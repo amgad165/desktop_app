@@ -14,8 +14,18 @@ def main():
     stylesheet = load_stylesheet('resources/styles/style.qss')
     app.setStyleSheet(stylesheet)
     
+    # Create the MainWindow instance
     window = MainWindow()
+    
+    # Set initial opacity to 0 (fully transparent)
+    window.fade_effect.setOpacity(0)
+    
+    # Show the MainWindow
     window.show()
+    
+    # Start the fade-in animation
+    window.fade_animation.start()
+    
     sys.exit(app.exec_())
 
 if __name__ == "__main__":

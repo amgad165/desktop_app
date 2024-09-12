@@ -102,12 +102,21 @@ class Ui_CreateBillPage(object):
         # Preis netto and Rabatt in %
         self.preisRabattLayout = QtWidgets.QHBoxLayout()
         
+        # New Name Input Added Here
+        self.orderNameLabel = QtWidgets.QLabel("Name")
+        self.orderNameInput = QtWidgets.QLineEdit(self.inputsSection)
+        self.orderNameInput.setPlaceholderText("Name")
+        self.preisRabattLayout.addWidget(self.orderNameLabel)
+        self.preisRabattLayout.addWidget(self.orderNameInput)
+
+        # Existing Preis netto Input
         self.preisNettoLabel = QtWidgets.QLabel("Preis netto")
         self.preisNettoInput = QtWidgets.QLineEdit(self.inputsSection)
         self.preisNettoInput.setPlaceholderText("Preis netto")
         self.preisRabattLayout.addWidget(self.preisNettoLabel)
         self.preisRabattLayout.addWidget(self.preisNettoInput)
 
+        # Existing Rabatt in % Input
         self.rabattLabel = QtWidgets.QLabel("Rabatt in %")
         self.rabattInput = QtWidgets.QLineEdit(self.inputsSection)
         self.rabattInput.setPlaceholderText("Rabatt in %")

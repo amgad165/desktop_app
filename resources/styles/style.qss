@@ -494,3 +494,47 @@ QLabel:selected {
     QTableCornerButton::section {
         background-color: #555;
     }
+
+
+#CustomTitleBar #settings_button{
+	background-color: transparent;
+	
+
+}
+
+#CustomTitleBar #settings_button:hover {
+    background-color: #2e2e2e;  /* Change background color on hover */
+}
+
+
+/* setting window */
+
+#settingsWindow {
+	background-color: #2e2e2e;  /* Dark grey background */
+}
+
+#settingsStackedWidget{
+	background-color: #2e2e2e;
+
+}
+#settingsButton {
+	border: 2px solid #331D2C;  /* Border color */
+	border-radius: 15px;        /* Rounded corners */
+	background-color: #3c3c3c;  /* Button background color */
+	color: #ffffff;             /* Text color */
+	
+        }
+#settingsButton:hover {
+ 	background-color: #0078d4; /* Change background on hover */
+	border-color: #005999;      /* Change border color on hover */
+}
+#buttonLabel {
+	color: #ffffff;             /* Label text color */
+	font-size: 14px;            /* Adjust font size if needed */
+}
+
+
+#icon_object{
+	background-color: transparent;  
+}
+

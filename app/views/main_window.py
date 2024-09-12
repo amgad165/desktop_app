@@ -3,6 +3,8 @@ from PyQt5.QtCore import Qt, QPropertyAnimation, QSize, QPoint
 from PyQt5.QtGui import QIcon
 from ui.ui_main_window import Ui_MainWindow
 from app.controllers.create_bill_controller import CreateBillController
+from app.views.settings_window import SettingsWindow  # Import the new SettingsWindow view
+from app.views.customers_page import CustomersPage  # Import the new CustomersPage view
 
 class CustomTitleBar(QFrame):
     def __init__(self, parent=None):
@@ -19,6 +21,23 @@ class CustomTitleBar(QFrame):
         self.title_label = QLabel("App Title", self)
         self.title_label.setObjectName("title_label")
         self.layout.addWidget(self.title_label)
+
+        # Spacer to push settings icon to the right
+        self.layout.addStretch()
+
+        # Settings button frame
+        self.settings_frame = QFrame(self)
+        self.settings_layout = QHBoxLayout(self.settings_frame)
+        self.settings_layout.setContentsMargins(0, 0, 20, 0)
+        self.settings_button = QPushButton(self.settings_frame)
+        self.settings_button.setFixedSize(30, 30)
+        self.settings_button.setObjectName("settings_button")
+        settings_icon = QIcon("resources/icons/settings.png")
+        self.settings_button.setIcon(settings_icon)
+        self.settings_button.setIconSize(QSize(20, 20))
+        self.settings_button.clicked.connect(self.open_settings)
+        self.settings_layout.addWidget(self.settings_button)
+        self.layout.addWidget(self.settings_frame)
 
         # Minimize button
         self.minimize_button = QPushButton(self)
@@ -53,6 +72,15 @@ class CustomTitleBar(QFrame):
         # Variables to track mouse dragging
         self._is_dragging = False
         self._start_pos = QPoint()
+
+    def open_settings(self):
+        print("Settings button clicked")  # Debugging line
+        try:
+            self.settings_window = SettingsWindow()
+            self.settings_window.show()
+            print("SettingsWindow should be visible now")  # Debugging line
+        except Exception as e:
+            print(f"Error opening SettingsWindow: {e}")
 
     def minimize_window(self):
         if self.window():
@@ -127,10 +155,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.current_label = None
 
         # Initialize the fade animation
-        self.fade_effect = QGraphicsOpacityEffect(self.stackedWidget)
-        self.stackedWidget.setGraphicsEffect(self.fade_effect)
+        self.fade_effect = QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.fade_effect)
         self.fade_animation = QPropertyAnimation(self.fade_effect, b"opacity")
-        self.fade_animation.setDuration(1000)  # Duration in milliseconds
+        self.fade_animation.setDuration(2000)  # Duration in milliseconds
+        self.fade_animation.setStartValue(0)
+        self.fade_animation.setEndValue(1)
 
         # Connect signals
         self.setup_connections()
@@ -166,8 +196,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.stackedWidget.setCurrentWidget(self.create_bill_controller.create_bill_page)
         self.highlight_label(self.createBillContainer)
 
-if __name__ == "__main__":
-    app = QApplication([])
-    window = MainWindow()
-    window.show()
-    app.exec_()
+    def showEvent(self, event):
+        # Start the fade-in animation when the window is shown
+        if not self.isVisible():
+            self.fade_animation.start()
+        super().showEvent(event)
