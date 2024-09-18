@@ -15,7 +15,24 @@ class CustomersPage(QtWidgets.QWidget):
         # Main layout
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setObjectName("mainLayout")
+        # Add customersLabel at the top of the page
+        self.customersLabel = QtWidgets.QLabel("Customers List", self)
+        # Add productsLabel at the top of the page
+        self.customersLabel.setObjectName("customersLabel")
 
+        # Set the font size and style
+        font = QtGui.QFont()
+        font.setPointSize(20)  # Set font size (increase as per requirement)
+        self.customersLabel.setFont(font)
+
+        # Center align the label
+        self.customersLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Add the label to the layout
+        self.layout.addWidget(self.customersLabel)
+
+
+        
         # Search bar
         self.searchInput = QtWidgets.QLineEdit(self)
         self.searchInput.setPlaceholderText("Search Customers")
@@ -36,12 +53,30 @@ class CustomersPage(QtWidgets.QWidget):
 
         # Buttons for add, edit, and delete
         self.buttonsLayout = QtWidgets.QHBoxLayout()
-        self.addButton = QtWidgets.QPushButton("Add", self)
+
+        # Add button with right-aligned icon and larger text
+        self.addButton = QPushButton("Add", self)
         self.addButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
-        self.editButton = QtWidgets.QPushButton("Edit", self)
+        self.addButton.setIconSize(QtCore.QSize(17, 17))  # Set the size of the icon
+        self.addButton.setLayoutDirection(QtCore.Qt.RightToLeft)  # Icon on the right
+        self.addButton.setStyleSheet("font-size: 16px;")  # Set larger font size
+
+        # Edit button with right-aligned icon and larger text
+        self.editButton = QPushButton("Edit ", self)
         self.editButton.setIcon(QtGui.QIcon('resources/icons/edit.png'))
-        self.deleteButton = QtWidgets.QPushButton("Delete", self)
+        self.editButton.setIconSize(QtCore.QSize(16, 16))  # Set the size of the icon
+        self.editButton.setLayoutDirection(QtCore.Qt.RightToLeft)  # Icon on the right
+        self.editButton.setStyleSheet("font-size: 16px;")  # Set larger font size
+
+
+        # Delete button with right-aligned icon and larger text
+        self.deleteButton = QPushButton("Delete ", self)
         self.deleteButton.setIcon(QtGui.QIcon('resources/icons/delete.png'))
+        self.deleteButton.setIconSize(QtCore.QSize(17, 17))  # Set the size of the icon
+        self.deleteButton.setLayoutDirection(QtCore.Qt.RightToLeft)  # Icon on the right
+        self.deleteButton.setStyleSheet("font-size: 16px;")  # Set larger font size
+
+        # Add buttons to layout
         self.buttonsLayout.addWidget(self.addButton)
         self.buttonsLayout.addWidget(self.editButton)
         self.buttonsLayout.addWidget(self.deleteButton)

@@ -414,23 +414,24 @@ QStackedWidget {
 /* Specific styles for "Home" and "Create Bill" labels */
 
 
-#homeContainer, #createBillContainer {
+#sideContainer {
     background-color: #31112C; 
     padding: 10px; 
     border-radius: 5px;
 }
 
-#homeContainer:hover, #createBillContainer:hover {
+
+
+#sideContainer:hover {
     background-color: #444444; /* Slightly lighter hover color */
 }
 
-#homeIconButton, #createBillIconButton {
+#sideIconButton {
     background-color: transparent;
  
-    
 }
 
-#homeLabel, #createBillLabel {
+#sideLabel {
     color: #FFFFFF; /* Set text color to ensure visibility */
     font-weight: bold; /* Optional: for better readability */
 }
@@ -538,3 +539,11 @@ QLabel:selected {
 	background-color: transparent;  
 }
 
+
+#drop_item:hover{
+ background-color: #444444;
+}
+
+#drop_container{
+background-color: rgba(255, 255, 255, 8);
+}

@@ -1,6 +1,6 @@
 # models/app_models.py
 
-from sqlalchemy import create_engine, Column, Integer, String, LargeBinary , Text
+from sqlalchemy import create_engine, Column, Integer, String, LargeBinary , Text , Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -51,6 +51,21 @@ class Customer(Base):
         return f"<Customer(nummer={self.nummer}, kunde={self.kunde}, adresse={self.adresse})>"
 
 
+# Define the new Product model
+class Product(Base):
+    __tablename__ = 'products'
+
+    id = Column(Integer, primary_key=True)
+    bild = Column(LargeBinary, nullable=True)  # Image stored as binary data (optional)
+    gruppe = Column(String, nullable=True)  # Gruppe (optional)
+    nummer = Column(String, nullable=False)  # Nummer (Product number)
+    produkt = Column(String, nullable=False)  # Produkt (Product name)
+    beschreibung = Column(Text, nullable=True)  # Beschreibung (optional description)
+    verkaufspreis = Column(Float, nullable=False)  # Verkaufspreis (Selling price)
+
+    def __repr__(self):
+        return f"<Product(nummer={self.nummer}, produkt={self.produkt}, verkaufspreis={self.verkaufspreis})>"
+    
 
 # Setup the database connection
 engine = create_engine('sqlite:///app.db')  # Or use 'postgresql://user:password@localhost/mydatabase'

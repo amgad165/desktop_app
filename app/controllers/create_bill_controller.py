@@ -6,7 +6,10 @@ from PIL import Image
 from io import BytesIO
 from shutil import copyfile
 import pyodbc
-from app.models.app_models import CompanyDetails, session
+from app.models.app_models import CompanyDetails, session , Product, engine
+from sqlalchemy.orm import sessionmaker
+
+
 
 class CreateBillController:
     def __init__(self, stacked_widget):
@@ -60,15 +63,27 @@ class CreateBillController:
     
     def load_products(self):
         try:
-            conn = pyodbc.connect(r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=resources/data/data.accdb;')
-            cursor = conn.cursor()
-            cursor.execute("SELECT CodeNr, Name, SalesPrice FROM Product")
-            products = cursor.fetchall()
-            conn.close()
-            
-            self.products = products
-            self.display_products(products)
+            # Create a session to interact with the database
+            Session = sessionmaker(bind=engine)
+            session = Session()
+
+            # Query the products table and fetch only the required fields: 'nummer', 'produkt', and 'verkaufspreis'
+            products = session.query(Product.nummer, Product.produkt, Product.verkaufspreis).all()
+
+            # Close the session
+            session.close()
+
+            # Convert the result into a list of tuples similar to the original version
+            product_list = [(product.nummer, product.produkt, product.verkaufspreis) for product in products]
+
+            # Store the products in the controller
+            self.products = product_list
+
+            # Display the products in the UI
+            self.display_products(product_list)
+
         except Exception as e:
+            # Handle any database errors
             QMessageBox.critical(self.create_bill_page, "Database Error", f"Could not load products: {e}")
 
     def filter_products(self):
@@ -260,3 +275,6 @@ class CreateBillController:
                 file_path += '.pdf'
             copyfile(self.pdf_path, file_path)
             QMessageBox.information(self.create_bill_page, "Export Successful", f"PDF exported successfully to {file_path}")
+
+
+
