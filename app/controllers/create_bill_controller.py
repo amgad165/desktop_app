@@ -6,10 +6,8 @@ from PIL import Image
 from io import BytesIO
 from shutil import copyfile
 import pyodbc
-from app.models.app_models import CompanyDetails, session , Product, engine
+from app.models.app_models import CompanyDetails, session, Product, Customer, engine  # Ensure Customer is imported
 from sqlalchemy.orm import sessionmaker
-
-
 
 class CreateBillController:
     def __init__(self, stacked_widget):
@@ -17,84 +15,105 @@ class CreateBillController:
         self.create_bill_page = QWidget()
         self.create_bill_page_ui = Ui_CreateBillPage()
         self.create_bill_page_ui.setupUi(self.create_bill_page)
-        
+
         self.selected_products = []
         self.current_selection = []
+        self.current_customer_selection = []  # For Kunde
 
         self.connections_setup = False  # Flag to ensure connections are only set up once
         self.setup_connections()
         self.load_products()
-        self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.infoPage)
-    
+        self.load_customers()  # Load customer data
+        self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.allgemeinPage)
+
+    def setup_page(self, page_type):
+        """Customizes the Create Bill page based on the page type passed."""
+        if page_type == "Angebot":
+            pass
+        elif page_type == "Rechnung":
+            pass
+        elif page_type == "Lieferschein":
+            pass
+        else:
+            pass
+
+        print(f"Page set up as {page_type}")
+
     def setup_connections(self):
         if self.connections_setup:
-            return  # Avoid setting up connections more than once
+            return
 
         self.connections_setup = True  # Set the flag to True after setting up connections
 
         # Connect buttons
-        self.create_bill_page_ui.addEntityButton.clicked.connect(self.update_pdf_viewer)  # Add Entity button
+        self.create_bill_page_ui.addEntityButton.clicked.connect(self.update_pdf_artikel)
         self.create_bill_page_ui.exportButton.clicked.connect(self.export_pdf)
-        
-        # Info page connections
-        self.create_bill_page_ui.infoButton.clicked.connect(lambda: self.show_inputs("info"))
-        self.create_bill_page_ui.addInfoButton.clicked.connect(self.update_pdf_viewer)  # Add Info button
-        
-        # Address page connections
-        self.create_bill_page_ui.addressButton.clicked.connect(lambda: self.show_inputs("address"))
-        self.create_bill_page_ui.addAddressDataButton.clicked.connect(self.update_pdf_viewer)  # Add Address Data button
-        
-        # Order page connections
-        self.create_bill_page_ui.orderButton.clicked.connect(lambda: self.show_inputs("order"))
-        self.create_bill_page_ui.orderSearchInput.textChanged.connect(self.filter_products)
+
+        # Allgemein page connections
+        self.create_bill_page_ui.allgemeinButton.clicked.connect(lambda: self.show_inputs("allgemein"))
+        self.create_bill_page_ui.addAllgemeinButton.clicked.connect(self.update_pdf_artikel)
+
+        # Kunde page connections
+        self.create_bill_page_ui.kundeButton.clicked.connect(lambda: self.show_inputs("kunde"))
+        self.create_bill_page_ui.addKundeEntityButton.clicked.connect(self.update_pdf_kunde)
+        self.create_bill_page_ui.customerTable.itemClicked.connect(self.on_customer_table_item_clicked)  # Connect table item clicked
+
+        # Artikel page connections
+        self.create_bill_page_ui.artikelButton.clicked.connect(lambda: self.show_inputs("artikel"))
+        self.create_bill_page_ui.artikelSearchInput.textChanged.connect(self.filter_products)
         self.create_bill_page_ui.productTable.itemSelectionChanged.connect(self.update_selected_products)
         self.create_bill_page_ui.removeLastRowButton.clicked.connect(self.handle_remove_last_row)
 
-        # Print debug statements
         print("Connections have been set up.")
 
     def show_inputs(self, section):
-        if section == "info":
-            self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.infoPage)
-        elif section == "address":
-            self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.addressPage)
-        elif section == "order":
-            self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.orderPage)
-    
+        if section == "allgemein":
+            self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.allgemeinPage)
+        elif section == "kunde":
+            self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.kundePage)
+        elif section == "artikel":
+            self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.artikelPage)
+
     def load_products(self):
+        try:
+            Session = sessionmaker(bind=engine)
+            session = Session()
+
+            products = session.query(Product.nummer, Product.produkt, Product.verkaufspreis).all()
+
+            session.close()
+
+            product_list = [(product.nummer, product.produkt, product.verkaufspreis) for product in products]
+
+            self.products = product_list
+            self.display_products(product_list)
+
+        except Exception as e:
+            QMessageBox.critical(self.create_bill_page, "Database Error", f"Could not load products: {e}")
+
+    def load_customers(self):
         try:
             # Create a session to interact with the database
             Session = sessionmaker(bind=engine)
             session = Session()
 
-            # Query the products table and fetch only the required fields: 'nummer', 'produkt', and 'verkaufspreis'
-            products = session.query(Product.nummer, Product.produkt, Product.verkaufspreis).all()
+            # Query the customers table
+            customers = session.query(Customer.nummer, Customer.kunde, Customer.adresse, Customer.plz, Customer.ort, Customer.telefon).all()
 
             # Close the session
             session.close()
 
-            # Convert the result into a list of tuples similar to the original version
-            product_list = [(product.nummer, product.produkt, product.verkaufspreis) for product in products]
+            # Convert the result into a list of tuples
+            customer_list = [(customer.nummer, customer.kunde, customer.adresse, customer.plz, customer.ort, customer.telefon) for customer in customers]
 
-            # Store the products in the controller
-            self.products = product_list
-
-            # Display the products in the UI
-            self.display_products(product_list)
+            # Display the customers in the UI
+            self.display_customers(customer_list)
 
         except Exception as e:
             # Handle any database errors
-            QMessageBox.critical(self.create_bill_page, "Database Error", f"Could not load products: {e}")
+            QMessageBox.critical(self.create_bill_page, "Database Error", f"Could not load customers: {e}")
 
-    def filter_products(self):
-        filter_text = self.create_bill_page_ui.orderSearchInput.text().lower()
-        for row in range(self.create_bill_page_ui.productTable.rowCount()):
-            item = self.create_bill_page_ui.productTable.item(row, 1)
-            if filter_text in item.text().lower():
-                self.create_bill_page_ui.productTable.setRowHidden(row, False)
-            else:
-                self.create_bill_page_ui.productTable.setRowHidden(row, True)
-                
+
     def display_products(self, products):
         self.create_bill_page_ui.productTable.setRowCount(0)
         for product in products:
@@ -103,85 +122,137 @@ class CreateBillController:
             for col, data in enumerate(product):
                 self.create_bill_page_ui.productTable.setItem(row_position, col, QTableWidgetItem(str(data)))
 
+    def display_customers(self, customers):
+        self.create_bill_page_ui.customerTable.setRowCount(0)
+        for customer in customers:
+            row_position = self.create_bill_page_ui.customerTable.rowCount()
+            self.create_bill_page_ui.customerTable.insertRow(row_position)
+            for col, data in enumerate(customer):
+                self.create_bill_page_ui.customerTable.setItem(row_position, col, QTableWidgetItem(str(data)))
+
+
+    def filter_products(self):
+        filter_text = self.create_bill_page_ui.artikelSearchInput.text().lower()
+        for row in range(self.create_bill_page_ui.productTable.rowCount()):
+            item = self.create_bill_page_ui.productTable.item(row, 1)
+            if filter_text in item.text().lower():
+                self.create_bill_page_ui.productTable.setRowHidden(row, False)
+            else:
+                self.create_bill_page_ui.productTable.setRowHidden(row, True)
+
+    def filter_customers(self):
+        filter_text = self.create_bill_page_ui.kundeSearchInput.text().lower()
+        for row in range(self.create_bill_page_ui.customerTable.rowCount()):
+            item = self.create_bill_page_ui.customerTable.item(row, 1)  # Assuming 'kunde' is the second column
+            if filter_text in item.text().lower():
+                self.create_bill_page_ui.customerTable.setRowHidden(row, False)
+            else:
+                self.create_bill_page_ui.customerTable.setRowHidden(row, True)
+
+    def on_customer_table_item_clicked(self, item):
+        row = item.row()
+        
+        # Helper function to safely get text from table items
+        def get_item_text(row, column):
+            table_item = self.create_bill_page_ui.customerTable.item(row, column)
+            return table_item.text() if table_item is not None else ""
+
+        # Get values from the customer table
+        kunden_nr = get_item_text(row, 0)  # Kundennummer column
+        kunde = get_item_text(row, 1)  # Kunde column
+        adresse = get_item_text(row, 2)  # Adresse column
+        plz = get_item_text(row, 3)  # PLZ column
+        ort = get_item_text(row, 4)  # Ort column
+        telefon = get_item_text(row, 5)  # Ort column
+
+        # Update the input fields
+        self.create_bill_page_ui.Kunden_Nr.setText(kunden_nr)
+        self.create_bill_page_ui.kundeInput.setText(kunde)
+        self.create_bill_page_ui.adresseInput.setText(adresse)
+        self.create_bill_page_ui.plzInput.setText(plz)
+        self.create_bill_page_ui.ortInput.setText(ort)
+        self.create_bill_page_ui.telefonInput.setText(telefon)
+
+
     def update_selected_products(self):
-        print("update_selected_products called")
         selected_rows = self.create_bill_page_ui.productTable.selectionModel().selectedRows()
-        
-        # Clear the current selection list
         self.current_selection = []
-        
+
         for row in selected_rows:
             row_data = []
             for column in range(self.create_bill_page_ui.productTable.columnCount()):
                 item = self.create_bill_page_ui.productTable.item(row.row(), column)
                 if item:
                     row_data.append(item.text())
-            
+
             if row_data:
-                # Append the row data as a tuple (CodeNr, Name, SalesPrice, ...)
                 self.current_selection.append(tuple(row_data))
-        
-        # Debug: print the current selection
-        print("Current selection:", self.current_selection)
-        
-        # If there's a selection, move values to the input fields
+
         if self.current_selection:
-            selected_product = self.current_selection[0]  # Get the first selected product
-            name = selected_product[1]  # Assuming 'Name' is in the second column
-            sales_price = selected_product[2]  # Assuming 'SalesPrice' is in the third column
-            
-            # Update the 'Name' input field
-            self.create_bill_page_ui.orderNameInput.setText(name)  # 'nameInput' from the UI
-            
-            # Update the 'Preis Netto' input field
-            self.create_bill_page_ui.preisNettoInput.setText(sales_price)  # 'priesNettoInput' from the UI
+            selected_product = self.current_selection[0]
+            name = selected_product[1]
+            sales_price = selected_product[2]
+
+            self.create_bill_page_ui.artikelNameInput.setText(name)
+            self.create_bill_page_ui.preisNettoInput.setText(sales_price)
 
 
-    def update_pdf_viewer(self):
-        # Add the currently selected products to the main list
+
+
+
+    def update_pdf_artikel(self):
         for product in self.current_selection:
-            # Get the values from the input fields (not from the selected table row)
-            name_input_value = self.create_bill_page_ui.orderNameInput.text()  # 'Name' from input
-            sales_price_input_value = self.create_bill_page_ui.preisNettoInput.text()  # 'Preis Netto' from input
-            menge_value = self.create_bill_page_ui.mengeInput.text() if self.create_bill_page_ui.mengeInput.text() else ''  # Get Menge value
-            
-            if menge_value:  # If Menge has a value
-                product_with_menge = (product[0], menge_value, name_input_value, sales_price_input_value)  # Use edited inputs
+            name_input_value = self.create_bill_page_ui.artikelNameInput.text()
+            sales_price_input_value = self.create_bill_page_ui.preisNettoInput.text()
+            menge_value = self.create_bill_page_ui.mengeInput.text() if self.create_bill_page_ui.mengeInput.text() else ''
+
+            if menge_value:
+                product_with_menge = (product[0], menge_value, name_input_value, sales_price_input_value)
             else:
-                product_with_menge = (product[0], '', name_input_value, sales_price_input_value)  # Use edited inputs
+                product_with_menge = (product[0], '', name_input_value, sales_price_input_value)
 
             if product_with_menge not in self.selected_products:
                 self.selected_products.append(product_with_menge)
 
-        # Collect input data for Info
         name = self.create_bill_page_ui.nameInput.text()
         age = self.create_bill_page_ui.ageInput.text()
         email = self.create_bill_page_ui.emailInput.text()
 
-        # Collect input data for Address
-        address = self.create_bill_page_ui.addressInput.text()
-        phone_number = self.create_bill_page_ui.phoneNumberInput.text()
 
-        # Path to save the PDF
         self.pdf_path = 'bill.pdf'
 
-        # Generate the PDF with updated selected products
-        self.generate_pdf(self.pdf_path, name, age, email, address, phone_number, self.selected_products)
+        self.generate_pdf(self.pdf_path, name, age, email, None, self.selected_products)
+        self.create_bill_page_ui.pdfViewer.load_pdf(self.pdf_path)
 
-        # Load the created PDF into the PDF viewer
+
+    def update_pdf_kunde(self):
+
+
+        name = self.create_bill_page_ui.nameInput.text()
+        age = self.create_bill_page_ui.ageInput.text()
+        email = self.create_bill_page_ui.emailInput.text()
+
+        kunde_dict ={'kunde':self.create_bill_page_ui.kundeInput.text(),'adresse':self.create_bill_page_ui.adresseInput.text(),
+                     'plz':self.create_bill_page_ui.plzInput.text(),'ort':self.create_bill_page_ui.ortInput.text(),
+                     'land':self.create_bill_page_ui.landSelect.currentText(),
+                     'kunden_nr':self.create_bill_page_ui.Kunden_Nr.text(),
+                     'telefon':self.create_bill_page_ui.telefonInput.text(),
+                     'uid_nr':self.create_bill_page_ui.uidNrInput.text(),
+                     }
+        self.pdf_path = 'bill.pdf'
+
+        self.generate_pdf(self.pdf_path, name, age, email, kunde_dict, self.selected_products)
         self.create_bill_page_ui.pdfViewer.load_pdf(self.pdf_path)
 
     def handle_remove_last_row(self):
-        print('handle_remove_last_row called')
         if self.selected_products:
-            self.selected_products.pop()  # Remove last product from selected list
+            self.selected_products.pop()
             self.current_selection = []
-            self.update_pdf_viewer()  # Regenerate PDF with updated list
-            print('Row removed. Remaining products:', self.selected_products)
+            self.update_pdf_artikel()
         else:
             QMessageBox.warning(self.create_bill_page, 'Remove Error', 'No rows to remove from PDF.')
 
-    def generate_pdf(self, pdf_path, name, age, email, address, phone_number, selected_products):
+    def generate_pdf(self, pdf_path, name, age, email, kunde_dict, selected_products): 
         class PDF(FPDF):
             def footer(self):
                 self.set_y(-15)
@@ -196,24 +267,20 @@ class CreateBillController:
         company_details = session.query(CompanyDetails).first()
 
         if company_details:
-            # Add company logo if available
             if company_details.logo_image:
                 logo_image = Image.open(BytesIO(company_details.logo_image))
                 logo_image_path = 'temp_logo.png'
                 logo_image.save(logo_image_path)
                 pdf.image(logo_image_path, x=10, y=10, w=30)
 
-            # Place Firmenname beside the logo
-            pdf.set_xy(50, 10)  # Adjust the positioning as necessary
+            pdf.set_xy(50, 10)
             pdf.set_font('Arial', 'B', 16)
             pdf.cell(0, 10, company_details.firmenname, ln=True, align='L')
 
-            # Align the remaining company details to the right side of the PDF
-            pdf.set_xy(140, 10)  # Set starting point for address details
+            pdf.set_xy(140, 10)
             pdf.set_font('Arial', '', 12)
 
-            # Reduced space between address lines
-            line_height = 6  # Adjust this value for less/more space between lines
+            line_height = 6
             pdf.cell(0, line_height, f'{company_details.adresse}', ln=True, align='R')
             pdf.cell(0, line_height, f'{company_details.plz} {company_details.ort}', ln=True, align='R')
             pdf.cell(0, line_height, company_details.land, ln=True, align='R')
@@ -221,31 +288,64 @@ class CreateBillController:
             pdf.cell(0, line_height, f'{company_details.email}', ln=True, align='R')
             pdf.cell(0, line_height, f'{company_details.steuernummer}', ln=True, align='R')
 
-            # Draw a horizontal line below the address info
-            pdf.set_xy(10, pdf.get_y() + 2)  # Move cursor to the line position (adjust as necessary)
+            pdf.set_xy(10, pdf.get_y() + 2)
             pdf.set_line_width(0.5)
-            pdf.line(10, pdf.get_y(), 200, pdf.get_y())  # Coordinates of the line (200 is the page width)
+            pdf.line(10, pdf.get_y(), 200, pdf.get_y())
 
-            pdf.ln(8)  # Add small space after the horizontal line
+            pdf.ln(8)
 
-        # Add recipient info
-        pdf.cell(0, 10, f'Name: {name}', 0, 1)
-        pdf.cell(0, 10, f'Age: {age}', 0, 1)
-        pdf.cell(0, 10, f'Email: {email}', 0, 1)
+        # Display Kunde info on the left
+        pdf.set_xy(10, pdf.get_y())  # Start from the left
+        pdf.cell(0, 6, f'{kunde_dict.get("kunde")}', 0, 1)
+        pdf.cell(0, 6, f'{kunde_dict.get("adresse")}', 0, 1)
+        pdf.cell(0, 6, f'{kunde_dict.get("plz")} {kunde_dict.get("ort")}', 0, 1)
+        pdf.cell(0, 6, f'{kunde_dict.get("land")}', 0, 1)
 
-        pdf.ln(8)  # Adjust this space as needed
+        # Display KundenInfo (aligned to the right with background color)
+        kunden_info_x = 120  # Position on the right side
+        kunden_info_y = pdf.get_y() - 30  # Align with the top of Kunde info
 
-        # Address section (center)
-        pdf.cell(0, 10, f'Address: {address}', 0, 1)
-        pdf.cell(0, 10, f'Phone Number: {phone_number}', 0, 1)
+        pdf.set_xy(kunden_info_x, kunden_info_y)
+        pdf.set_fill_color(200, 220, 255)  # Background color for the container
+        pdf.cell(80, 30, '', 0, 1, 'R', 1)  # Container with background color
 
-        pdf.ln(8)  # Adjust this space as needed
+        # Position title inside the container with larger font and bold
+        pdf.set_xy(kunden_info_x + 5, kunden_info_y + 2)  # Add padding inside the container
+        pdf.set_font('Arial', 'B', 14)  # Bold and larger font for the title
+        pdf.cell(0, 6, 'Kundeninfo', 0, 1, 'L')
 
-        # Order section (right side)
+        # Reset font to normal size and not bold for the rest of the data
+        pdf.set_font('Arial', '', 12)  # Regular font for the following lines
+
+        # Define the label width to align values
+        label_width = 35  # Adjust this based on your needs
+        value_x_offset = kunden_info_x + 5 + label_width
+
+        # Kunden-Nr
+        pdf.set_xy(kunden_info_x + 5, kunden_info_y + 10)
+        pdf.cell(label_width, 6, 'Kunden-Nr:', 0, 0, 'L')  # Print label with fixed width
+        pdf.set_xy(value_x_offset, kunden_info_y + 10)
+        pdf.cell(0, 6, kunde_dict.get("kunden_nr"), 0, 1, 'L')  # Print value aligned
+
+        # Telefon
+        pdf.set_xy(kunden_info_x + 5, kunden_info_y + 16)
+        pdf.cell(label_width, 6, 'Telefon:', 0, 0, 'L')  # Print label with fixed width
+        pdf.set_xy(value_x_offset, kunden_info_y + 16)
+        pdf.cell(0, 6, kunde_dict.get("telefon"), 0, 1, 'L')  # Print value aligned
+
+        # UID-Nr
+        pdf.set_xy(kunden_info_x + 5, kunden_info_y + 22)
+        pdf.cell(label_width, 6, 'UID-Nr:', 0, 0, 'L')  # Print label with fixed width
+        pdf.set_xy(value_x_offset, kunden_info_y + 22)
+        pdf.cell(0, 6, kunde_dict.get("uid_nr"), 0, 1, 'L')  # Print value aligned
+
+
+        pdf.ln(20)
+
+        # Rest of the order details (this remains the same as your original code)
         pdf.set_font('Arial', 'B', 12)
         pdf.cell(0, 10, 'Order:', 0, 1)
 
-        # Table headers with background color
         pdf.set_fill_color(200, 220, 255)
         pdf.set_font('Arial', 'B', 12)
         pdf.cell(40, 10, 'CodeNr', 1, 0, 'C', 1)
@@ -253,11 +353,9 @@ class CreateBillController:
         pdf.cell(60, 10, 'Name', 1, 0, 'C', 1)
         pdf.cell(40, 10, 'SalesPrice', 1, 1, 'C', 1)
 
-        # Reset font for table rows
         pdf.set_font('Arial', '', 12)
         pdf.set_fill_color(240, 240, 240)
 
-        # Adding the selected products to the PDF table
         for product in selected_products:
             pdf.cell(40, 10, product[0], 1, 0, 'C', 1)
             pdf.cell(40, 10, product[1], 1, 0, 'C', 1)
@@ -275,6 +373,3 @@ class CreateBillController:
                 file_path += '.pdf'
             copyfile(self.pdf_path, file_path)
             QMessageBox.information(self.create_bill_page, "Export Successful", f"PDF exported successfully to {file_path}")
-
-
-

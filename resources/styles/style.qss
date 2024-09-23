@@ -469,12 +469,11 @@ QLabel:selected {
 }
 
 
-#orderContainer{
+#artikelContainer{
 	background-color: #1A3636;
-	padding: 10px;
 
 	margin-top: 70px;
-	margin-bottom: 100px;
+	margin-bottom: 50px;
 
 }
 
@@ -546,4 +545,9 @@ QLabel:selected {
 
 #drop_container{
 background-color: rgba(255, 255, 255, 8);
+}
+
+
+#headerLabel{
+	font-size: 18px;
 }

@@ -5,7 +5,8 @@ from ui.ui_main_window import Ui_MainWindow
 from app.controllers.create_bill_controller import CreateBillController
 from app.views.settings_window import SettingsWindow
 from app.views.customers_page import CustomersPage
-from app.views.products_page import ProductsPage  # Import the ProductsPage
+from app.views.products_page import ProductsPage  
+from app.views.workers_page import WorkersPage  
 
 class CustomTitleBar(QFrame):
         def __init__(self, parent=None):
@@ -165,6 +166,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.customersPage = CustomersPage()  # Instantiate the CustomersPage
         self.stackedWidget.addWidget(self.customersPage)  # Add it to the stacked widget
 
+        # Set up CustomersPage
+        self.workersPage = WorkersPage()  # Instantiate the WorkersPage
+        self.stackedWidget.addWidget(self.workersPage)  # Add it to the stacked widget
+
+
         # Set up ProductsPage
         self.productsPage = ProductsPage()  # Instantiate the ProductsPage
         self.stackedWidget.addWidget(self.productsPage)  # Add it to the stacked widget
@@ -187,11 +193,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show_home_page()
 
     def setup_connections(self):
-        self.homeLabel.mousePressEvent = lambda event: self.show_home_page()
-        self.createBillLabel.mousePressEvent = lambda event: self.show_create_bill_page()
-        self.customersLabel.mousePressEvent = lambda event: self.show_customers_page()
-        self.productsLabel.mousePressEvent = lambda event: self.show_products_page()
-        self.item1Label.mousePressEvent = lambda event: self.show_angebot_document_page()
+        self.homeContainer.mousePressEvent = lambda event: self.show_home_page()
+        self.createBillContainer.mousePressEvent = lambda event: self.show_create_bill_page()
+        self.customersContainer.mousePressEvent = lambda event: self.show_customers_page()
+        self.workersContainer.mousePressEvent = lambda event: self.show_workers_page()
+        self.productsContainer.mousePressEvent = lambda event: self.show_products_page()
+        self.item1Container.mousePressEvent = lambda event: self.show_angebot_document_page()
+
 
 
 
@@ -232,6 +240,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fade_animation.setStartValue(0)
         self.fade_animation.setEndValue(1)
         self.fade_animation.start()
+        
+        # Pass the context as 'Angebot' to the controller
+        self.create_bill_controller.setup_page("Angebot")
+        
         self.stackedWidget.setCurrentWidget(self.create_bill_controller.create_bill_page)
         self.highlight_label(self.item1Container)
 
@@ -243,6 +255,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fade_animation.start()
         self.stackedWidget.setCurrentWidget(self.customersPage)
         self.highlight_label(self.customersContainer)
+
+    def show_workers_page(self):
+        print("Showing workers page")
+        self.fade_animation.stop()
+        self.fade_animation.setStartValue(0)
+        self.fade_animation.setEndValue(1)
+        self.fade_animation.start()
+        self.stackedWidget.setCurrentWidget(self.workersPage)
+        self.highlight_label(self.workersContainer)
 
     def show_products_page(self):
         print("Showing products page")  # Add this method to show the ProductsPage

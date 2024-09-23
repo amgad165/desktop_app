@@ -51,6 +51,24 @@ class Customer(Base):
         return f"<Customer(nummer={self.nummer}, kunde={self.kunde}, adresse={self.adresse})>"
 
 
+class Worker(Base):
+    __tablename__ = 'workers'  # Correct table name
+
+    id = Column(Integer, primary_key=True)
+    status = Column(String, nullable=True)  # Status
+    nummer = Column(String, nullable=False)  # Nummer
+    worker = Column(String, nullable=False)  # Worker
+    adresse = Column(String, nullable=False)  # Adresse
+    plz = Column(String, nullable=False)  # PLZ
+    ort = Column(String, nullable=False)  # Ort
+    telefon = Column(String, nullable=False)  # Telefon
+    mobil = Column(String, nullable=True)  # Mobil (optional)
+    email = Column(String, nullable=False)  # E-Mail
+
+
+    def __repr__(self):
+        return f"<Workers(nummer={self.nummer}, worker={self.kunde}, adresse={self.adresse})>"
+
 # Define the new Product model
 class Product(Base):
     __tablename__ = 'products'
