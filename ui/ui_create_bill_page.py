@@ -1,5 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from app.widgets.pdf_viewer_widget import PDFViewerWidget
+from app.models.app_models import Worker, session
 
 class Ui_CreateBillPage(object):
     def setupUi(self, CreateBillPage):
@@ -38,24 +39,97 @@ class Ui_CreateBillPage(object):
         self.artikelButton.setObjectName("artikelButton")
         self.buttonsLayout.addWidget(self.artikelButton)
 
+        
         # StackedWidget for different inputs
         self.inputsStackedWidget = QtWidgets.QStackedWidget(self.leftWidget)
         self.inputsStackedWidget.setObjectName("inputsStackedWidget")
         self.leftLayout.addWidget(self.inputsStackedWidget)
 
         # Allgemein inputs (formerly Info inputs)
+
         self.allgemeinPage = QtWidgets.QWidget()
         self.allgemeinPage.setObjectName("allgemeinPage")
         self.allgemeinLayout = QtWidgets.QVBoxLayout(self.allgemeinPage)
-        self.nameInput = QtWidgets.QLineEdit(self.allgemeinPage)
-        self.nameInput.setPlaceholderText("Name")
-        self.allgemeinLayout.addWidget(self.nameInput)
-        self.ageInput = QtWidgets.QLineEdit(self.allgemeinPage)
-        self.ageInput.setPlaceholderText("Age")
-        self.allgemeinLayout.addWidget(self.ageInput)
-        self.emailInput = QtWidgets.QLineEdit(self.allgemeinPage)
-        self.emailInput.setPlaceholderText("Email")
-        self.allgemeinLayout.addWidget(self.emailInput)
+
+        # Betreff and Datum (in the same line)
+        self.betreffDatumLayout = QtWidgets.QHBoxLayout()
+
+        self.betreffLabel = QtWidgets.QLabel("Betreff")
+        self.betreffInput = QtWidgets.QLineEdit(self.allgemeinPage)
+        self.betreffInput.setPlaceholderText("Betreff")
+        self.betreffDatumLayout.addWidget(self.betreffLabel)
+        self.betreffDatumLayout.addWidget(self.betreffInput)
+
+        self.datumLabel = QtWidgets.QLabel("Datum")
+        self.datumInput = QtWidgets.QDateEdit(self.allgemeinPage)
+        self.datumInput.setCalendarPopup(True)
+        self.datumInput.setMinimumWidth(100) 
+
+        self.betreffDatumLayout.addWidget(self.datumLabel)
+        self.betreffDatumLayout.addWidget(self.datumInput)
+
+        self.allgemeinLayout.addLayout(self.betreffDatumLayout)
+
+        # Leistungszeitraum
+        self.leistungszeitraumLayout = QtWidgets.QHBoxLayout()
+        self.leistungszeitraumLabel = QtWidgets.QLabel("Leistungszeitraum")
+        self.leistungszeitraumInput = QtWidgets.QLineEdit(self.allgemeinPage)
+        self.leistungszeitraumInput.setPlaceholderText("Leistungszeitraum")
+        self.leistungszeitraumLayout.addWidget(self.leistungszeitraumLabel)
+        self.leistungszeitraumLayout.addWidget(self.leistungszeitraumInput)
+        self.allgemeinLayout.addLayout(self.leistungszeitraumLayout)
+
+        # Referenz
+        self.referenzLayout = QtWidgets.QHBoxLayout()
+        self.referenzLabel = QtWidgets.QLabel("Referenz")
+        self.referenzInput = QtWidgets.QLineEdit(self.allgemeinPage)
+        self.referenzInput.setPlaceholderText("Referenz")
+        self.referenzLayout.addWidget(self.referenzLabel)
+        self.referenzLayout.addWidget(self.referenzInput)
+        self.allgemeinLayout.addLayout(self.referenzLayout)
+
+
+        # Bearbeiter and Preise sind (Netto/Brutto)
+        self.bearbeiterLayout = QtWidgets.QHBoxLayout()
+        self.bearbeiterLayout.setSpacing(10)  # Optional: Adjust spacing between containers
+
+        # Container 1: Bearbeiter Label and Select (left-aligned)
+        self.bearbeiterContainerLayout = QtWidgets.QHBoxLayout()
+        self.bearbeiterLabel = QtWidgets.QLabel("Bearbeiter")
+        self.bearbeiterSelect = QtWidgets.QComboBox(self.allgemeinPage)
+
+        worker_names = [worker.worker for worker in session.query(Worker).all()]
+        # Populate the combo box with all worker names at once
+        self.bearbeiterSelect.addItems(worker_names)       
+         
+        self.bearbeiterSelect.setMinimumWidth(150) 
+
+        self.bearbeiterContainerLayout.addWidget(self.bearbeiterLabel)
+        self.bearbeiterContainerLayout.addWidget(self.bearbeiterSelect)
+
+        # Align the container to the leftmost side
+        self.bearbeiterLayout.addLayout(self.bearbeiterContainerLayout)
+        self.bearbeiterLayout.addItem(QtWidgets.QSpacerItem(60, 50, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+
+        # Container 2: Preise sind Label and Radio Buttons (right-aligned)
+        self.preiseContainerLayout = QtWidgets.QHBoxLayout()
+        self.preiseSindLabel = QtWidgets.QLabel("Preise sind:")
+        self.nettoRadioButton = QtWidgets.QRadioButton("Netto", self.allgemeinPage)
+        self.bruttoRadioButton = QtWidgets.QRadioButton("Brutto", self.allgemeinPage)
+        self.preiseContainerLayout.addWidget(self.preiseSindLabel)
+        self.preiseContainerLayout.addWidget(self.nettoRadioButton)
+        self.preiseContainerLayout.addWidget(self.bruttoRadioButton)
+
+        # Align the container to the rightmost side
+        self.bearbeiterLayout.addLayout(self.preiseContainerLayout)
+
+        # Add the main bearbeiterLayout to the allgemeinLayout
+        self.allgemeinLayout.addLayout(self.bearbeiterLayout)
+
+        self.inputsStackedWidget.addWidget(self.allgemeinPage)
+
+
+
         self.addAllgemeinButton = QtWidgets.QPushButton("Add Info", self.allgemeinPage)
         self.addAllgemeinButton.setObjectName("addAllgemeinButton")
         self.allgemeinLayout.addWidget(self.addAllgemeinButton)

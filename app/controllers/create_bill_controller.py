@@ -20,6 +20,9 @@ class CreateBillController:
         self.current_selection = []
         self.current_customer_selection = []  # For Kunde
 
+        self.kunde_dict = {}
+        self.allgemein_dict = {}
+
         self.connections_setup = False  # Flag to ensure connections are only set up once
         self.setup_connections()
         self.load_products()
@@ -29,7 +32,8 @@ class CreateBillController:
     def setup_page(self, page_type):
         """Customizes the Create Bill page based on the page type passed."""
         if page_type == "Angebot":
-            pass
+            self.create_bill_page_ui.betreffInput.setText("Angebot")
+            
         elif page_type == "Rechnung":
             pass
         elif page_type == "Lieferschein":
@@ -51,7 +55,7 @@ class CreateBillController:
 
         # Allgemein page connections
         self.create_bill_page_ui.allgemeinButton.clicked.connect(lambda: self.show_inputs("allgemein"))
-        self.create_bill_page_ui.addAllgemeinButton.clicked.connect(self.update_pdf_artikel)
+        self.create_bill_page_ui.addAllgemeinButton.clicked.connect(self.update_pdf_allgemein)
 
         # Kunde page connections
         self.create_bill_page_ui.kundeButton.clicked.connect(lambda: self.show_inputs("kunde"))
@@ -214,25 +218,25 @@ class CreateBillController:
             if product_with_menge not in self.selected_products:
                 self.selected_products.append(product_with_menge)
 
-        name = self.create_bill_page_ui.nameInput.text()
-        age = self.create_bill_page_ui.ageInput.text()
-        email = self.create_bill_page_ui.emailInput.text()
+        # name = self.create_bill_page_ui.nameInput.text()
+        # age = self.create_bill_page_ui.ageInput.text()
+        # email = self.create_bill_page_ui.emailInput.text()
 
 
         self.pdf_path = 'bill.pdf'
 
-        self.generate_pdf(self.pdf_path, name, age, email, None, self.selected_products)
+        self.generate_pdf(self.pdf_path, self.allgemein_dict, self.kunde_dict, self.selected_products)
         self.create_bill_page_ui.pdfViewer.load_pdf(self.pdf_path)
 
 
     def update_pdf_kunde(self):
 
 
-        name = self.create_bill_page_ui.nameInput.text()
-        age = self.create_bill_page_ui.ageInput.text()
-        email = self.create_bill_page_ui.emailInput.text()
+        # name = self.create_bill_page_ui.nameInput.text()
+        # age = self.create_bill_page_ui.ageInput.text()
+        # email = self.create_bill_page_ui.emailInput.text()
 
-        kunde_dict ={'kunde':self.create_bill_page_ui.kundeInput.text(),'adresse':self.create_bill_page_ui.adresseInput.text(),
+        self.kunde_dict ={'kunde':self.create_bill_page_ui.kundeInput.text(),'adresse':self.create_bill_page_ui.adresseInput.text(),
                      'plz':self.create_bill_page_ui.plzInput.text(),'ort':self.create_bill_page_ui.ortInput.text(),
                      'land':self.create_bill_page_ui.landSelect.currentText(),
                      'kunden_nr':self.create_bill_page_ui.Kunden_Nr.text(),
@@ -241,8 +245,21 @@ class CreateBillController:
                      }
         self.pdf_path = 'bill.pdf'
 
-        self.generate_pdf(self.pdf_path, name, age, email, kunde_dict, self.selected_products)
+        self.generate_pdf(self.pdf_path, self.allgemein_dict, self.kunde_dict, self.selected_products)
         self.create_bill_page_ui.pdfViewer.load_pdf(self.pdf_path)
+
+    def update_pdf_allgemein(self):
+
+
+
+        self.allgemein_dict ={'betreff':self.create_bill_page_ui.betreffInput.text(),'date':self.create_bill_page_ui.datumInput.text(),
+                     'bearbeiter':self.create_bill_page_ui.bearbeiterSelect.currentText()
+                     }
+        self.pdf_path = 'bill.pdf'
+
+        self.generate_pdf(self.pdf_path, self.allgemein_dict, self.kunde_dict, self.selected_products)
+        self.create_bill_page_ui.pdfViewer.load_pdf(self.pdf_path)
+
 
     def handle_remove_last_row(self):
         if self.selected_products:
@@ -252,7 +269,7 @@ class CreateBillController:
         else:
             QMessageBox.warning(self.create_bill_page, 'Remove Error', 'No rows to remove from PDF.')
 
-    def generate_pdf(self, pdf_path, name, age, email, kunde_dict, selected_products): 
+    def generate_pdf(self, pdf_path, allgemein_dict, kunde_dict, selected_products): 
         class PDF(FPDF):
             def footer(self):
                 self.set_y(-15)
@@ -294,53 +311,85 @@ class CreateBillController:
 
             pdf.ln(8)
 
-        # Display Kunde info on the left
-        pdf.set_xy(10, pdf.get_y())  # Start from the left
-        pdf.cell(0, 6, f'{kunde_dict.get("kunde")}', 0, 1)
-        pdf.cell(0, 6, f'{kunde_dict.get("adresse")}', 0, 1)
-        pdf.cell(0, 6, f'{kunde_dict.get("plz")} {kunde_dict.get("ort")}', 0, 1)
-        pdf.cell(0, 6, f'{kunde_dict.get("land")}', 0, 1)
+        if kunde_dict:
+            
+            # Display Kunde info on the left
+            pdf.set_xy(10, pdf.get_y())  # Start from the left
+            pdf.cell(0, 6, f'{kunde_dict.get("kunde")}', 0, 1)
+            pdf.cell(0, 6, f'{kunde_dict.get("adresse")}', 0, 1)
+            pdf.cell(0, 6, f'{kunde_dict.get("plz")} {kunde_dict.get("ort")}', 0, 1)
+            pdf.cell(0, 6, f'{kunde_dict.get("land")}', 0, 1)
 
-        # Display KundenInfo (aligned to the right with background color)
-        kunden_info_x = 120  # Position on the right side
-        kunden_info_y = pdf.get_y() - 30  # Align with the top of Kunde info
+            # Display KundenInfo (aligned to the right with background color)
+            kunden_info_x = 120  # Position on the right side
+            kunden_info_y = pdf.get_y() - 30  # Align with the top of Kunde info
 
-        pdf.set_xy(kunden_info_x, kunden_info_y)
-        pdf.set_fill_color(200, 220, 255)  # Background color for the container
-        pdf.cell(80, 30, '', 0, 1, 'R', 1)  # Container with background color
+            pdf.set_xy(kunden_info_x, kunden_info_y)
+            pdf.set_fill_color(200, 220, 255)  # Background color for the container
+            pdf.cell(80, 30, '', 0, 1, 'R', 1)  # Container with background color
 
-        # Position title inside the container with larger font and bold
-        pdf.set_xy(kunden_info_x + 5, kunden_info_y + 2)  # Add padding inside the container
-        pdf.set_font('Arial', 'B', 14)  # Bold and larger font for the title
-        pdf.cell(0, 6, 'Kundeninfo', 0, 1, 'L')
+            # Position title inside the container with larger font and bold
+            pdf.set_xy(kunden_info_x + 5, kunden_info_y + 2)  # Add padding inside the container
+            pdf.set_font('Arial', 'B', 14)  # Bold and larger font for the title
+            pdf.cell(0, 6, 'Kundeninfo', 0, 1, 'L')
 
-        # Reset font to normal size and not bold for the rest of the data
-        pdf.set_font('Arial', '', 12)  # Regular font for the following lines
+            # Reset font to normal size and not bold for the rest of the data
+            pdf.set_font('Arial', '', 12)  # Regular font for the following lines
 
-        # Define the label width to align values
-        label_width = 35  # Adjust this based on your needs
-        value_x_offset = kunden_info_x + 5 + label_width
+            # Define the label width to align values
+            label_width = 35  # Adjust this based on your needs
+            value_x_offset = kunden_info_x + 5 + label_width
 
-        # Kunden-Nr
-        pdf.set_xy(kunden_info_x + 5, kunden_info_y + 10)
-        pdf.cell(label_width, 6, 'Kunden-Nr:', 0, 0, 'L')  # Print label with fixed width
-        pdf.set_xy(value_x_offset, kunden_info_y + 10)
-        pdf.cell(0, 6, kunde_dict.get("kunden_nr"), 0, 1, 'L')  # Print value aligned
+            # Kunden-Nr
+            pdf.set_xy(kunden_info_x + 5, kunden_info_y + 10)
+            pdf.cell(label_width, 6, 'Kunden-Nr:', 0, 0, 'L')  # Print label with fixed width
+            pdf.set_xy(value_x_offset, kunden_info_y + 10)
+            pdf.cell(0, 6, kunde_dict.get("kunden_nr"), 0, 1, 'L')  # Print value aligned
 
-        # Telefon
-        pdf.set_xy(kunden_info_x + 5, kunden_info_y + 16)
-        pdf.cell(label_width, 6, 'Telefon:', 0, 0, 'L')  # Print label with fixed width
-        pdf.set_xy(value_x_offset, kunden_info_y + 16)
-        pdf.cell(0, 6, kunde_dict.get("telefon"), 0, 1, 'L')  # Print value aligned
+            # Telefon
+            pdf.set_xy(kunden_info_x + 5, kunden_info_y + 16)
+            pdf.cell(label_width, 6, 'Telefon:', 0, 0, 'L')  # Print label with fixed width
+            pdf.set_xy(value_x_offset, kunden_info_y + 16)
+            pdf.cell(0, 6, kunde_dict.get("telefon"), 0, 1, 'L')  # Print value aligned
 
-        # UID-Nr
-        pdf.set_xy(kunden_info_x + 5, kunden_info_y + 22)
-        pdf.cell(label_width, 6, 'UID-Nr:', 0, 0, 'L')  # Print label with fixed width
-        pdf.set_xy(value_x_offset, kunden_info_y + 22)
-        pdf.cell(0, 6, kunde_dict.get("uid_nr"), 0, 1, 'L')  # Print value aligned
+            # UID-Nr
+            pdf.set_xy(kunden_info_x + 5, kunden_info_y + 22)
+            pdf.cell(label_width, 6, 'UID-Nr:', 0, 0, 'L')  # Print label with fixed width
+            pdf.set_xy(value_x_offset, kunden_info_y + 22)
+            pdf.cell(0, 6, kunde_dict.get("uid_nr"), 0, 1, 'L')  # Print value aligned
 
 
-        pdf.ln(20)
+            pdf.ln(20)
+        else:
+
+            # Define a constant height for the Kunde info section
+            KUNDE_INFO_HEIGHT = 40  # Adjust this value as needed
+
+            # Add the same height of space if kunde_dict is not provided
+            pdf.ln(KUNDE_INFO_HEIGHT)
+
+
+        if allgemein_dict:
+            # Display Betreff info on the left
+            pdf.set_xy(10, pdf.get_y())  # Start from the left
+            pdf.set_font('Arial', 'B', 14)  # Bold and larger font for the title
+            pdf.cell(0, 6, f'{allgemein_dict.get("betreff")}', 0, 1)
+            pdf.set_font('Arial', '', 12)  # Regular font for the following lines
+
+            # Display Date and Bearbeiter info on the right with labels
+            right_x = 150  # Position on the right side
+            current_y = pdf.get_y() - 6  # Adjust y position to align with Betreff
+
+            pdf.set_xy(right_x, current_y)
+            pdf.cell(0, 6, 'Date:', 0, 1, 'L')
+            pdf.set_xy(right_x + 20, current_y)
+            pdf.cell(0, 6, f'{allgemein_dict.get("date")}', 0, 1, 'L')
+
+            pdf.set_xy(right_x, current_y + 6)
+            pdf.cell(0, 6, 'Bearbeiter:', 0, 1, 'L')
+            pdf.set_xy(right_x + 20, current_y + 6)
+            pdf.cell(0, 6, f'  {allgemein_dict.get("bearbeiter")}', 0, 1, 'L')
+            
 
         # Rest of the order details (this remains the same as your original code)
         pdf.set_font('Arial', 'B', 12)
