@@ -61,38 +61,38 @@ class Ui_MainWindow(object):
         # Add margin between home and create bill containers
         self.verticalLayout.addSpacing(4)  # Add spacing between containers
 
-        # Container widget for create bill icon and label
-        self.createBillContainer = QtWidgets.QWidget(self.sidebar)
-        self.createBillContainer.setObjectName("sideContainer")
+        # # Container widget for create bill icon and label
+        # self.createBillContainer = QtWidgets.QWidget(self.sidebar)
+        # self.createBillContainer.setObjectName("sideContainer")
         
-        # Horizontal layout for create bill icon and label
-        self.createBillLayout = QtWidgets.QHBoxLayout(self.createBillContainer)
-        self.createBillLayout.setContentsMargins(10, 0, 0, 0)
-        self.createBillLayout.setSpacing(1)  # Adjust spacing to bring icon and label closer
-        self.createBillLayout.setObjectName("createBillLayout")
-        self.createBillLayout.setAlignment(QtCore.Qt.AlignCenter)  # Center the content
+        # # Horizontal layout for create bill icon and label
+        # self.createBillLayout = QtWidgets.QHBoxLayout(self.createBillContainer)
+        # self.createBillLayout.setContentsMargins(10, 0, 0, 0)
+        # self.createBillLayout.setSpacing(1)  # Adjust spacing to bring icon and label closer
+        # self.createBillLayout.setObjectName("createBillLayout")
+        # self.createBillLayout.setAlignment(QtCore.Qt.AlignCenter)  # Center the content
 
-        # Create Bill Icon button
-        self.createBillIconButton = QtWidgets.QPushButton(self.createBillContainer)
-        self.createBillIconButton.setFixedSize(20, 20)  # Set the size of the icon button
-        self.createBillIconButton.setObjectName("sideIconButton")
-        icon_create_bill = QtGui.QIcon("resources/icons/bill.png")  # Set the path to your icon file
-        self.createBillIconButton.setIcon(icon_create_bill)
-        self.createBillIconButton.setIconSize(self.createBillIconButton.size())  # Use button's size as icon size
-        self.createBillLayout.addWidget(self.createBillIconButton)
+        # # Create Bill Icon button
+        # self.createBillIconButton = QtWidgets.QPushButton(self.createBillContainer)
+        # self.createBillIconButton.setFixedSize(20, 20)  # Set the size of the icon button
+        # self.createBillIconButton.setObjectName("sideIconButton")
+        # icon_create_bill = QtGui.QIcon("resources/icons/bill.png")  # Set the path to your icon file
+        # self.createBillIconButton.setIcon(icon_create_bill)
+        # self.createBillIconButton.setIconSize(self.createBillIconButton.size())  # Use button's size as icon size
+        # self.createBillLayout.addWidget(self.createBillIconButton)
 
-        # Create Bill Label
-        self.createBillLabel = QtWidgets.QLabel(self.createBillContainer)
-        self.createBillLabel.setObjectName("sideLabel")
-        self.createBillLabel.setFixedHeight(50)  # Set a fixed height
-        self.createBillLabel.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-        self.createBillLayout.addWidget(self.createBillLabel)
+        # # Create Bill Label
+        # self.createBillLabel = QtWidgets.QLabel(self.createBillContainer)
+        # self.createBillLabel.setObjectName("sideLabel")
+        # self.createBillLabel.setFixedHeight(50)  # Set a fixed height
+        # self.createBillLabel.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        # self.createBillLayout.addWidget(self.createBillLabel)
 
-        # Add create bill container to the sidebar
-        self.verticalLayout.addWidget(self.createBillContainer)
+        # # Add create bill container to the sidebar
+        # self.verticalLayout.addWidget(self.createBillContainer)
 
-        # Add margin between create bill and customers containers
-        self.verticalLayout.addSpacing(4)
+        # # Add margin between create bill and customers containers
+        # self.verticalLayout.addSpacing(4)
 
 
 
@@ -111,7 +111,7 @@ class Ui_MainWindow(object):
         self.documentIconButton = QtWidgets.QPushButton(self.documentContainer)
         self.documentIconButton.setFixedSize(20, 20)
         self.documentIconButton.setObjectName("sideIconButton")
-        icon_document = QtGui.QIcon("resources/icons/document.png")  # Set the path to your document icon file
+        icon_document = QtGui.QIcon("resources/icons/bill.png")  # Set the path to your document icon file
         
         self.documentIconButton.setIcon(icon_document)
         self.documentIconButton.setIconSize(self.documentIconButton.size())
@@ -167,7 +167,7 @@ class Ui_MainWindow(object):
         self.item2Layout = QtWidgets.QHBoxLayout(self.item2Container)
         self.item2Icon = QtWidgets.QPushButton(self.item2Container)
         self.item2Icon.setFixedSize(20, 20)
-        icon_item2 = QtGui.QIcon("resources/icons/item2.png")  # Set the path to your item 2 icon
+        icon_item2 = QtGui.QIcon("resources/icons/offer.png")  # Set the path to your item 2 icon
         self.item2Icon.setIcon(icon_item2)
         self.item2Icon.setIconSize(self.item2Icon.size())
         self.item2Icon.setObjectName("sideIconButton")
@@ -175,9 +175,11 @@ class Ui_MainWindow(object):
 
         self.item2Layout.addWidget(self.item2Icon)
 
-        self.item2Label = QtWidgets.QLabel("Item 2")
+        self.item2Label = QtWidgets.QLabel("Rechnung")
         self.item2Label.setObjectName("drop_item")
         self.item2Layout.addWidget(self.item2Label)
+
+        self.item2Container.setObjectName("sideContainer")
 
         self.documentItemsLayout.addWidget(self.item2Container)
 
@@ -186,15 +188,17 @@ class Ui_MainWindow(object):
         self.item3Layout = QtWidgets.QHBoxLayout(self.item3Container)
         self.item3Icon = QtWidgets.QPushButton(self.item3Container)
         self.item3Icon.setFixedSize(20, 20)
-        icon_item3 = QtGui.QIcon("resources/icons/item3.png")  # Set the path to your item 3 icon
+        icon_item3 = QtGui.QIcon("resources/icons/offer.png")  # Set the path to your item 3 icon
         self.item3Icon.setIcon(icon_item3)
         self.item3Icon.setIconSize(self.item3Icon.size())
 
         self.item3Layout.addWidget(self.item3Icon)
 
-        self.item3Label = QtWidgets.QLabel("Item 3")
+        self.item3Label = QtWidgets.QLabel("Lieferschein")
         self.item3Label.setObjectName("drop_item")
         self.item3Layout.addWidget(self.item3Label)
+
+        self.item3Container.setObjectName("sideContainer")
 
         self.documentItemsLayout.addWidget(self.item3Container)
         # Add the documentItemsContainer to the sidebar layout
@@ -308,6 +312,77 @@ class Ui_MainWindow(object):
         # Add products container to the sidebar
         self.verticalLayout.addWidget(self.productsContainer)
 
+
+
+        # Add spacing between Products and Casher
+        self.verticalLayout.addSpacing(4)
+
+        # Container widget for Casher icon and label
+        self.casherContainer = QtWidgets.QWidget(self.sidebar)
+        self.casherContainer.setObjectName("sideContainer")
+        
+        # Horizontal layout for Casher icon and label
+        self.casherLayout = QtWidgets.QHBoxLayout(self.casherContainer)
+        self.casherLayout.setContentsMargins(10, 0, 0, 0)
+        self.casherLayout.setSpacing(1)  # Adjust spacing to bring icon and label closer
+        self.casherLayout.setObjectName("customersLayout")
+        self.casherLayout.setAlignment(QtCore.Qt.AlignCenter)  # Center the content
+
+        # Casher Icon button
+        self.casherIconButton = QtWidgets.QPushButton(self.casherContainer)
+        self.casherIconButton.setFixedSize(20, 20)  # Set the size of the icon button
+        self.casherIconButton.setObjectName("sideIconButton")
+        icon_casher = QtGui.QIcon("resources/icons/money.png")  # Set the path to your icon file
+        self.casherIconButton.setIcon(icon_casher)
+        self.casherIconButton.setIconSize(self.casherIconButton.size())  # Use button's size as icon size
+
+        self.casherLayout.addWidget(self.casherIconButton)
+
+        # Casher Label
+        self.casherLabel = QtWidgets.QLabel(self.casherContainer)
+        self.casherLabel.setObjectName("sideLabel")
+        self.casherLabel.setFixedHeight(50)  # Set a fixed height
+        self.casherLabel.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        self.casherLayout.addWidget(self.casherLabel)
+
+        # Add customers container to the sidebar
+        self.verticalLayout.addWidget(self.casherContainer)
+
+
+        # Add spacing between orders and Casher
+        self.verticalLayout.addSpacing(4)
+
+        # Container widget for documents icon and label
+        self.ordersContainer = QtWidgets.QWidget(self.sidebar)
+        self.ordersContainer.setObjectName("sideContainer")
+        
+        # Horizontal layout for documents icon and label
+        self.ordersLayout = QtWidgets.QHBoxLayout(self.ordersContainer)
+        self.ordersLayout.setContentsMargins(10, 0, 0, 0)
+        self.ordersLayout.setSpacing(1)  # Adjust spacing to bring icon and label closer
+        self.ordersLayout.setObjectName("ordersLayout")
+        self.ordersLayout.setAlignment(QtCore.Qt.AlignCenter)  # Center the content
+
+        # documents Icon button
+        self.ordersIconButton = QtWidgets.QPushButton(self.ordersContainer)
+        self.ordersIconButton.setFixedSize(20, 20)  # Set the size of the icon button
+        self.ordersIconButton.setObjectName("sideIconButton")
+        icon_orders = QtGui.QIcon("resources/icons/document.png")  # Set the path to your icon file
+        self.ordersIconButton.setIcon(icon_orders)
+        self.ordersIconButton.setIconSize(self.ordersIconButton.size())  # Use button's size as icon size
+
+        self.ordersLayout.addWidget(self.ordersIconButton)
+
+        # documents Label
+        self.ordersLabel = QtWidgets.QLabel(self.ordersContainer)
+        self.ordersLabel.setObjectName("sideLabel")
+        self.ordersLabel.setFixedHeight(50)  # Set a fixed height
+        self.ordersLabel.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        self.ordersLayout.addWidget(self.ordersLabel)
+
+        # Add customers container to the sidebar
+        self.verticalLayout.addWidget(self.ordersContainer)
+
         # Add a spacer item to push labels to the top and extend sidebar to full height
         self.verticalLayout.addSpacerItem(QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
 
@@ -328,9 +403,10 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Main Window"))
         self.homeLabel.setText(_translate("MainWindow", "Home"))
-        self.createBillLabel.setText(_translate("MainWindow", "Create Bill"))
+        # self.createBillLabel.setText(_translate("MainWindow", "Create Bill"))
         self.documentLabel.setText(_translate("MainWindow", "Documents"))
         self.customersLabel.setText(_translate("MainWindow", "Customers"))
         self.workersLabel.setText(_translate("MainWindow", "Workers"))
-
         self.productsLabel.setText(_translate("MainWindow", "Products"))
+        self.casherLabel.setText(_translate("MainWindow", "kasse"))
+        self.ordersLabel.setText(_translate("MainWindow", "Orders"))

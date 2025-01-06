@@ -1,12 +1,14 @@
 from PyQt5.QtWidgets import QWidget, QFileDialog, QMessageBox, QTableWidgetItem
 from PyQt5 import QtWidgets
 from ui.ui_create_bill_page import Ui_CreateBillPage
+from app.views.batch_product_dialog import BatchProductDialog  # Import the dialog
+
 from fpdf import FPDF
 from PIL import Image
 from io import BytesIO
 from shutil import copyfile
 import pyodbc
-from app.models.app_models import CompanyDetails, session, Product, Customer, engine  # Ensure Customer is imported
+from app.models.app_models import CompanyDetails, Nummernvergabe, session, Product, Customer,Document, billSettings,engine  # Ensure Customer is imported
 from sqlalchemy.orm import sessionmaker
 
 class CreateBillController:
@@ -29,15 +31,83 @@ class CreateBillController:
         self.load_customers()  # Load customer data
         self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.allgemeinPage)
 
+    def reset_page(self):
+        """Resets all fields, selections, and data on the Create Bill page."""
+        # Clear all text inputs
+        self.create_bill_page_ui.betreffInput.clear()
+        self.create_bill_page_ui.datumInput.clear()
+        self.create_bill_page_ui.leistungszeitraumInput.clear()
+        self.create_bill_page_ui.referenzInput.clear()
+        self.create_bill_page_ui.summeNettoInput.clear()
+        # self.create_bill_page_ui.summeBruttoInput.clear()
+        self.create_bill_page_ui.kundeInput.clear()
+        self.create_bill_page_ui.lieferadresseInput.clear()
+        self.create_bill_page_ui.plzInput.clear()
+        self.create_bill_page_ui.ortInput.clear()
+
+        # Reset dropdowns and radio buttons
+        self.create_bill_page_ui.bearbeiterSelect.setCurrentIndex(0)
+        self.create_bill_page_ui.anredeSelect.setCurrentIndex(0)
+        self.create_bill_page_ui.landSelect.setCurrentIndex(0)
+        self.create_bill_page_ui.nettoRadioButton.setChecked(False)
+        self.create_bill_page_ui.bruttoRadioButton.setChecked(False)
+
+        # Clear customer and product table selections
+        self.create_bill_page_ui.customerTable.clearSelection()
+        self.create_bill_page_ui.productTable.clearSelection()
+
+        # Reset internal state
+        self.selected_products = []
+        self.current_selection = []
+        self.current_customer_selection = []
+        self.kunde_dict = {}
+        self.allgemein_dict = {}
+
+        # Reset inputsStackedWidget to the default page (e.g., allgemeinPage)
+        self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.allgemeinPage)
+
+        print("Page reset successfully.")
+
+
+    def reset_pdf_viewer(self):
+        """
+        Resets the PDF viewer by clearing the loaded PDF.
+        """
+        self.pdf_path = None  # Clear the stored path
+        self.create_bill_page_ui.pdfViewer.load_pdf(None)  # Unload the current PDF
+        print("PDF Viewer has been reset.")
+
+
     def setup_page(self, page_type):
+
+        self.reset_page()
+        self.reset_pdf_viewer()
+
+
+        nummernvergabe = session.query(Nummernvergabe).first()
+
         """Customizes the Create Bill page based on the page type passed."""
         if page_type == "Angebot":
-            self.create_bill_page_ui.betreffInput.setText("Angebot")
+            if nummernvergabe:
+                if nummernvergabe.betreff_angebot:
+                    self.create_bill_page_ui.betreffInput.setText(nummernvergabe.betreff_angebot)
+                else:
+                    self.create_bill_page_ui.betreffInput.setText("Angebot")
             
         elif page_type == "Rechnung":
-            pass
+            if nummernvergabe:
+                if nummernvergabe.betreff_rechnung:
+                    self.create_bill_page_ui.betreffInput.setText(nummernvergabe.betreff_rechnung)
+                else:
+                    self.create_bill_page_ui.betreffInput.setText("Rechnung")
+
         elif page_type == "Lieferschein":
-            pass
+            if nummernvergabe:
+                if nummernvergabe.betreff_lieferschein:
+                    self.create_bill_page_ui.betreffInput.setText(nummernvergabe.betreff_lieferschein)
+                else:
+                    self.create_bill_page_ui.betreffInput.setText("Lieferschein")
+
         else:
             pass
 
@@ -54,23 +124,24 @@ class CreateBillController:
         self.create_bill_page_ui.exportButton.clicked.connect(self.export_pdf)
 
         # Allgemein page connections
-        self.create_bill_page_ui.allgemeinButton.clicked.connect(lambda: self.show_inputs("allgemein"))
+        self.create_bill_page_ui.allgemeinButton.clicked.connect(lambda: self.show_inputs("allgemein", self.create_bill_page_ui.allgemeinButton))
         self.create_bill_page_ui.addAllgemeinButton.clicked.connect(self.update_pdf_allgemein)
 
         # Kunde page connections
-        self.create_bill_page_ui.kundeButton.clicked.connect(lambda: self.show_inputs("kunde"))
+        self.create_bill_page_ui.kundeButton.clicked.connect(lambda: self.show_inputs("kunde", self.create_bill_page_ui.kundeButton))
         self.create_bill_page_ui.addKundeEntityButton.clicked.connect(self.update_pdf_kunde)
         self.create_bill_page_ui.customerTable.itemClicked.connect(self.on_customer_table_item_clicked)  # Connect table item clicked
 
         # Artikel page connections
-        self.create_bill_page_ui.artikelButton.clicked.connect(lambda: self.show_inputs("artikel"))
+        self.create_bill_page_ui.artikelButton.clicked.connect(lambda: self.show_inputs("artikel", self.create_bill_page_ui.artikelButton))
         self.create_bill_page_ui.artikelSearchInput.textChanged.connect(self.filter_products)
         self.create_bill_page_ui.productTable.itemSelectionChanged.connect(self.update_selected_products)
         self.create_bill_page_ui.removeLastRowButton.clicked.connect(self.handle_remove_last_row)
+        self.create_bill_page_ui.addBatchButton.clicked.connect(self.handle_add_batch)
 
         print("Connections have been set up.")
 
-    def show_inputs(self, section):
+    def show_inputs(self, section, clicked_button):
         if section == "allgemein":
             self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.allgemeinPage)
         elif section == "kunde":
@@ -78,6 +149,34 @@ class CreateBillController:
         elif section == "artikel":
             self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.artikelPage)
 
+
+        # Highlight the clicked button
+        self.highlight_button(clicked_button)
+
+    def highlight_button(self, clicked_button):
+        # Reset styles for all buttons
+        default_style = """
+            QPushButton {
+                background-color: #f0f0f0;
+                border: 1px solid #ccc;
+                padding: 5px 10px;
+            }
+        """
+        highlighted_style = """
+            QPushButton {
+                background-color: #007BFF;
+                color: white;
+                border: 1px solid #0056b3;
+                padding: 5px 10px;
+            }
+        """
+        # Reset styles
+        self.create_bill_page_ui.allgemeinButton.setStyleSheet(default_style)
+        self.create_bill_page_ui.kundeButton.setStyleSheet(default_style)
+        self.create_bill_page_ui.artikelButton.setStyleSheet(default_style)
+
+        # Apply the highlighted style to the clicked button
+        clicked_button.setStyleSheet(highlighted_style)
     def load_products(self):
         try:
             Session = sessionmaker(bind=engine)
@@ -218,11 +317,39 @@ class CreateBillController:
             if product_with_menge not in self.selected_products:
                 self.selected_products.append(product_with_menge)
 
-        # name = self.create_bill_page_ui.nameInput.text()
-        # age = self.create_bill_page_ui.ageInput.text()
-        # email = self.create_bill_page_ui.emailInput.text()
 
+        # Calculate the total price
+        settings = session.query(billSettings).first()
+        mwst = settings.VAT if settings else None  # Get VAT if it exists, else None
+        
+        payment_type = settings.prices_is if settings else None
 
+        total_price = 0.0
+        for product in self.selected_products:
+            try:
+                menge = float(product[1])  # Second index (quantity)
+                price = float(product[3])  # Last index (price)
+                subtotal = menge * price  # Calculate subtotal (quantity * price)
+
+                if payment_type == "Netto":
+                    # Add VAT only for Netto
+                    if mwst is not None:
+                        subtotal *= (1 + mwst / 100)  # Add VAT to the subtotal
+                elif payment_type == "Brutto":
+                    # No need to add VAT for Brutto; it's already included in the price
+                    pass
+
+                total_price += subtotal  # Add to the total price
+            except ValueError:
+                # Handle cases where quantity or price is invalid
+                print(f"Invalid value for product: {product}")
+                continue
+
+        
+        
+
+        # Update the summeNettoInput field
+        self.create_bill_page_ui.summeNettoInput.setText(f"{total_price:.2f}")
         self.pdf_path = 'bill.pdf'
 
         self.generate_pdf(self.pdf_path, self.allgemein_dict, self.kunde_dict, self.selected_products)
@@ -268,6 +395,19 @@ class CreateBillController:
             self.update_pdf_artikel()
         else:
             QMessageBox.warning(self.create_bill_page, 'Remove Error', 'No rows to remove from PDF.')
+
+
+    def handle_add_batch(self):
+        # Open the batch product dialog
+        dialog = BatchProductDialog(self.products, self.create_bill_page)
+        if dialog.exec_():
+            # Fetch selected products
+            product_with_menge = dialog.add_all_products()
+
+            [self.selected_products.append(product) for product in product_with_menge if product not in self.selected_products]
+
+            # Update the PDF
+            self.update_pdf_artikel()
 
     def generate_pdf(self, pdf_path, allgemein_dict, kunde_dict, selected_products): 
         class PDF(FPDF):
@@ -421,4 +561,76 @@ class CreateBillController:
             if not file_path.endswith('.pdf'):
                 file_path += '.pdf'
             copyfile(self.pdf_path, file_path)
+            self.save_to_order()
+
             QMessageBox.information(self.create_bill_page, "Export Successful", f"PDF exported successfully to {file_path}")
+
+
+
+
+    def save_to_order(self):
+        # Create a session to interact with the database
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        # Retrieve VAT and payment type settings
+        settings = session.query(billSettings).first()
+        mwst = settings.VAT if settings else None
+        payment_type = settings.prices_is if settings else None
+
+        # Calculate summe_netto and summe_brutto
+        summe_netto = 0.0
+        summe_brutto = 0.0
+
+        for product in self.selected_products:
+            try:
+                menge = float(product[1])  # Second index (quantity)
+                price = float(product[3])  # Last index (price)
+                subtotal = menge * price  # Quantity * price
+
+                if payment_type == "Netto":
+                    summe_netto += subtotal
+                    if mwst is not None:
+                        summe_brutto += subtotal * (1 + mwst / 100)  # Add VAT to Netto
+                    else:
+                        summe_brutto += subtotal  # If no VAT, Brutto equals Netto
+                elif payment_type == "Brutto":
+                    summe_brutto += subtotal
+                    if mwst is not None:
+                        summe_netto += subtotal / (1 + mwst / 100)  # Remove VAT from Brutto
+                    else:
+                        summe_netto += subtotal  # If no VAT, Netto equals Brutto
+            except ValueError:
+                # Handle cases where quantity or price is invalid
+                print(f"Invalid value for product: {product}")
+                continue
+
+        # Create a new Document instance and populate it with data from the UI
+        document = Document(
+            status=True,  # Replace with actual logic if needed
+            datum=self.create_bill_page_ui.datumInput.text(),
+            betreff=self.create_bill_page_ui.betreffInput.text(),
+            kundennummer=self.create_bill_page_ui.Kunden_Nr.text(),
+            kunde=self.create_bill_page_ui.kundeInput.text(),
+            adresse=self.create_bill_page_ui.adresseInput.text(),
+            plz=self.create_bill_page_ui.plzInput.text(),
+            ort=self.create_bill_page_ui.ortInput.text(),
+            leistungszeitraum=self.create_bill_page_ui.leistungszeitraumInput.text(),
+            lieferadresse=self.create_bill_page_ui.lieferadresseInput.text(),
+            projekt='Projekt',  # Replace with actual project data
+            summe_netto=round(summe_netto, 2),
+            summe_brutto=round(summe_brutto, 2),
+            summe_kommentare='Kommentare',  # Replace with actual comments
+            doc_type=self.create_bill_page_ui.betreffInput.text(),
+        )
+
+        # Add the document to the session and commit it to the database
+        try:
+            session.add(document)
+            session.commit()
+            QMessageBox.information(self.create_bill_page, "Save Successful", "Document saved successfully.")
+        except Exception as e:
+            session.rollback()  # Rollback in case of an error
+            QMessageBox.critical(self.create_bill_page, "Save Failed", f"Failed to save the document: {str(e)}")
+        finally:
+            session.close()  # Close the session

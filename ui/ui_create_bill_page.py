@@ -1,11 +1,12 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from app.widgets.pdf_viewer_widget import PDFViewerWidget
 from app.models.app_models import Worker, session
+from app.models.app_models import Anreden, Lander, Einheiten, Zahlungsarten , Nummernvergabe , billSettings
 
 class Ui_CreateBillPage(object):
     def setupUi(self, CreateBillPage):
         CreateBillPage.setObjectName("CreateBillPage")
-        CreateBillPage.resize(800, 600)
+        CreateBillPage.resize(820, 600)
 
         # Main layout
         self.horizontalLayout = QtWidgets.QHBoxLayout(CreateBillPage)
@@ -13,6 +14,8 @@ class Ui_CreateBillPage(object):
         
         # Left half: Inputs and buttons
         self.leftWidget = QtWidgets.QWidget(CreateBillPage)
+        self.leftWidget.setMaximumWidth(850)  # Set minimum width for the left widget
+
         self.leftLayout = QtWidgets.QVBoxLayout(self.leftWidget)
         self.leftLayout.setObjectName("leftLayout")
         
@@ -148,9 +151,10 @@ class Ui_CreateBillPage(object):
         self.anredeLabel = QtWidgets.QLabel("Anrede")
         self.anredeSelect = QtWidgets.QComboBox(self.kundePage)
         self.anredeSelect.setMinimumWidth(150) 
-        self.anredeSelect.addItems(["Herr", "Frau", "Firma"])  # Sample options
         self.anredeUIDLayout.addWidget(self.anredeLabel)
         self.anredeUIDLayout.addWidget(self.anredeSelect)
+        anrede_options = [anrede.gender for anrede in session.query(Anreden).all()]
+        self.anredeSelect.addItems(anrede_options)
 
         self.uidNrLabel = QtWidgets.QLabel("UID-NR")
         self.uidNrInput = QtWidgets.QLineEdit(self.kundePage)
@@ -242,7 +246,10 @@ class Ui_CreateBillPage(object):
         # 6th Row: Land (select menu)
         self.landLabel = QtWidgets.QLabel("Land")
         self.landSelect = QtWidgets.QComboBox(self.kundePage)
-        self.landSelect.addItems(["Germany", "Austria", "Switzerland"])  # Sample countries
+        lander_options = [land.land for land in session.query(Lander).all()]
+        self.landSelect.addItems(lander_options)
+        # self.landSelect.setMaximumWidth(150)
+
         self.kundeLayout.addWidget(self.landLabel)
         self.kundeLayout.addWidget(self.landSelect)
 
@@ -355,18 +362,30 @@ class Ui_CreateBillPage(object):
         self.mengeLabel = QtWidgets.QLabel("Menge")
         self.mengeInput = QtWidgets.QLineEdit(self.inputsSection)
         self.mengeInput.setPlaceholderText("Menge")
+        self.mengeInput.setText("1")
         self.mengeEinheitLayout.addWidget(self.mengeLabel)
         self.mengeEinheitLayout.addWidget(self.mengeInput)
 
+        # Einheit (converted to select)
         self.einheitLabel = QtWidgets.QLabel("Einheit")
-        self.einheitInput = QtWidgets.QLineEdit(self.inputsSection)
-        self.einheitInput.setPlaceholderText("Einheit")
+        self.einheitSelect = QtWidgets.QComboBox(self.inputsSection)
+        self.einheitSelect.setPlaceholderText("Wählen Sie eine Einheit")
+        # Populate Einheit select options directly
+        einheiten = session.query(Einheiten).all()
+        self.einheitSelect.clear()
+        for einheit in einheiten:
+            self.einheitSelect.addItem(einheit.unit, einheit.id)  # Assuming Einheiten has 'name' and 'id' fields
         self.mengeEinheitLayout.addWidget(self.einheitLabel)
-        self.mengeEinheitLayout.addWidget(self.einheitInput)
+        self.mengeEinheitLayout.addWidget(self.einheitSelect)
 
+        # MwSt (fetch from billSettings)
         self.mwstLabel = QtWidgets.QLabel("MwSt. in %")
         self.mwstInput = QtWidgets.QLineEdit(self.inputsSection)
-        self.mwstInput.setPlaceholderText("MwSt. in %")
+        # Populate MwSt input directly
+        settings = session.query(billSettings).first()
+        if settings:
+            self.mwstInput.setText(f"{settings.VAT} %")
+            self.mwstInput.setReadOnly(True)
         self.mengeEinheitLayout.addWidget(self.mwstLabel)
         self.mengeEinheitLayout.addWidget(self.mwstInput)
 
@@ -420,6 +439,14 @@ class Ui_CreateBillPage(object):
         self.removeLastRowButton.setText("Remove last row")
         self.buttonsHorizontalLayout.addWidget(self.removeLastRowButton)
         
+
+        # Add this code in the setupUi method of Ui_CreateBillPage
+        self.addBatchButton = QtWidgets.QPushButton(self.artikelContainer)
+        self.addBatchButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
+        self.addBatchButton.setText("Add Products by Batch")
+        self.buttonsHorizontalLayout.addWidget(self.addBatchButton)  # Assuming verticalLayout contains buttons
+
+
         self.artikelContainerLayout.addLayout(self.buttonsHorizontalLayout)
 
         self.artikelLayout.addWidget(self.artikelContainer)
