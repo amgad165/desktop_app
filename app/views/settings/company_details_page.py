@@ -1,9 +1,13 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSizePolicy, QFrame, QStackedWidget, QLineEdit, QFileDialog, QGraphicsOpacityEffect, QMessageBox,QSpacerItem
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QStackedWidget, QListWidget, QListWidgetItem, QFileDialog, QMessageBox, QSizePolicy
+)
+from PyQt5.QtGui import QFont, QIcon, QPixmap
+from PyQt5.QtCore import QSize, Qt
 from app.models.app_models import CompanyDetails, session
-
-
+from app.views.settings.nummernvergabe_page import NummernvergabePage  # Import NummernvergabePage
+from app.views.settings.standard_page import StandardPage
+from app.views.settings.bankverbindung_page import BankverbindungPage  # Import BankverbindungPage
 
 class CompanyDetailsPage(QWidget):
     def __init__(self, parent):
@@ -13,180 +17,202 @@ class CompanyDetailsPage(QWidget):
         self.load_company_details()
 
     def init_ui(self):
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(20, 0, 20, 20)
-        main_layout.setAlignment(Qt.AlignTop)
+        main_layout = QVBoxLayout(self)  # Main vertical layout
 
-        # Back button
-        back_button_layout = QHBoxLayout()
-        back_button_layout.setAlignment(Qt.AlignLeft)
+        # --- Back Button Layout ---
+        top_layout = QHBoxLayout()
+        self.back_button = QPushButton(self)
+        self.back_button.setIcon(QIcon("resources/icons/arrow-left.png"))
+        self.back_button.setIconSize(QSize(24, 24))
+        self.back_button.setStyleSheet("border: none; background-color: transparent;")
+        self.back_button.clicked.connect(self.parent.go_back_to_settings_page)
+        top_layout.addWidget(self.back_button)
+        top_layout.addStretch(1)  # Push everything else to the right
 
-        back_button = QPushButton(self)
-        back_button.setIcon(QIcon("resources/icons/arrow-left.png"))
-        back_button.setIconSize(QSize(24, 24))
-        back_button.setStyleSheet("border: none; background-color: transparent;")
-        back_button.clicked.connect(self.parent.go_back_to_settings_page)
+        # --- Main Content Layout ---
+        content_layout = QHBoxLayout()  # Main horizontal layout (Sidebar + Content)
 
-        back_button_layout.addWidget(back_button)
-        main_layout.addLayout(back_button_layout)
+        # Sidebar
+        sidebar_layout = QVBoxLayout()
+        self.sidebar = QListWidget()
+        self.sidebar.setFixedWidth(400)
+        self.sidebar.setSpacing(10)
 
-        # Header label
-        header_label = QLabel("Edit Company Details", self)
-        header_label.setAlignment(Qt.AlignCenter)
-        header_label.setStyleSheet("font-size: 18px; font-weight: bold;")
-        main_layout.addWidget(header_label)
+        # Sidebar items
+        items = ["Firmendaten", "Bankverbindung", "Währung", "Nummernvergabe"]
+        for item in items:
+            list_item = QListWidgetItem(item)
+            list_item.setSizeHint(QSize(220, 60))
+            list_item.setTextAlignment(Qt.AlignCenter)
 
-        # Center layout
-        center_layout = QVBoxLayout()
-        center_layout.setAlignment(Qt.AlignCenter)
+            # Set font bold and larger size
+            font = QFont()
+            font.setBold(True)
+            font.setPointSize(14)
+            list_item.setFont(font)
 
-        # Create and layout input fields
-        self.anrede_input = QLineEdit(self)
-        self.firmenname_input = QLineEdit(self)
-        self.vorname_input = QLineEdit(self)
-        self.nachname_input = QLineEdit(self)
-        self.adresse_input = QLineEdit(self)
-        self.plz_input = QLineEdit(self)
-        self.ort_input = QLineEdit(self)
-        self.land_input = QLineEdit(self)
-        self.telefon_input = QLineEdit(self)
-        self.fax_input = QLineEdit(self)
-        self.email_input = QLineEdit(self)
-        self.firmenbuchnummer_input = QLineEdit(self)
-        self.steuernummer_input = QLineEdit(self)
+            self.sidebar.addItem(list_item)
 
-        # Helper function to create a vertical layout for a label and input
-        def create_field_layout(label_text, input_widget):
-            layout = QVBoxLayout()
-            
-            # Create and configure the label
+        # Sidebar styling
+        self.sidebar.setStyleSheet("""
+            QListWidget {
+                background: transparent;
+                border: none;
+            }
+            QListWidget::item {
+                background-color: #e8e4e4;
+                padding: 10px;
+                font-size: 20px;
+                font-weight: bold;
+                color: black;
+                height: 60px;
+                border-radius: 15px;
+                margin: 5px 0px;
+            }
+            QListWidget::item:selected {
+                background-color: #b8b4b4;
+                font-weight: bold;
+            }
+            QListWidget::item:focus {
+                outline: none;
+            }
+        """)
+
+        # Default selection
+        self.sidebar.setCurrentRow(0)
+        self.sidebar.currentRowChanged.connect(self.switch_section)
+        sidebar_layout.addWidget(self.sidebar)
+
+        # Content Area - Rounded Container
+        content_container = QWidget()
+        content_container.setStyleSheet("""
+            background-color: #e6e6e6;
+            border-radius: 15px;
+            padding: 8px;
+        """)
+
+        content_stack_layout = QVBoxLayout(content_container)
+        self.content_stack = QStackedWidget()
+        self.content_stack.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # Sections
+        self.firmendaten_widget = self.create_firmendaten_section()
+        self.bankverbindung_widget = BankverbindungPage(self)
+        self.währung_widget = StandardPage(self)  # Placeholder
+        self.nummernvergabe_widget = NummernvergabePage(self)  # Use NummernvergabePage
+
+        self.content_stack.addWidget(self.firmendaten_widget)
+        self.content_stack.addWidget(self.bankverbindung_widget)
+        self.content_stack.addWidget(self.währung_widget)
+        self.content_stack.addWidget(self.nummernvergabe_widget)
+
+        content_stack_layout.addWidget(self.content_stack)
+        content_layout.addLayout(sidebar_layout)
+        content_layout.addWidget(content_container)
+
+        # Add layouts to the main layout
+        main_layout.addLayout(top_layout)  # Back button at the top
+        main_layout.addLayout(content_layout)  # Sidebar + Content
+
+        self.setLayout(main_layout)
+
+
+    def create_firmendaten_section(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignTop)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+
+        def create_field(label_text):
+            container = QHBoxLayout()
             label = QLabel(label_text, self)
-            label.setMinimumHeight(40)  # Set the minimum height for the label
-            
-            # Add the label and input widget to the layout
-            layout.addWidget(label)
-            layout.addWidget(input_widget)
-            
-            return layout
+            label.setFixedWidth(150)
+            label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            label.setStyleSheet("font-weight: bold;")
 
-        # Row 1: Anrede, Firmenname
-        row1_layout = QHBoxLayout()
-        row1_layout.addLayout(create_field_layout("Anrede:", self.anrede_input))
-        row1_layout.addLayout(create_field_layout("Firmenname:", self.firmenname_input))
+            input_field = QLineEdit(self)
+            input_field.setStyleSheet("background-color: #f2f2f2; border-radius: 5px; padding: 2px; color: black;")
 
-        center_layout.addLayout(row1_layout)
+            container.addWidget(label)
+            container.addWidget(input_field)
+            return container, input_field
 
-        # Row 2: Vorname, Nachname
-        row2_layout = QHBoxLayout()
-        row2_layout.addLayout(create_field_layout("Vorname:", self.vorname_input))
-        row2_layout.addLayout(create_field_layout("Nachname:", self.nachname_input))
-        center_layout.addLayout(row2_layout)
+        # Input Fields
+        self.anrede_input_layout, self.anrede_input = create_field("Anrede:")
+        self.firmenname_input_layout, self.firmenname_input = create_field("Firmenname:")
+        self.vorname_input_layout, self.vorname_input = create_field("Vorname:")
+        self.nachname_input_layout, self.nachname_input = create_field("Nachname:")
+        self.adresse_input_layout, self.adresse_input = create_field("Adresse:")
+        self.plz_input_layout, self.plz_input = create_field("PLZ:")
+        self.ort_input_layout, self.ort_input = create_field("Ort:")
+        self.land_input_layout, self.land_input = create_field("Land:")
+        self.telefon_input_layout, self.telefon_input = create_field("Telefon:")
+        self.fax_input_layout, self.fax_input = create_field("Fax:")
+        self.email_input_layout, self.email_input = create_field("E-Mail:")
+        self.firmenbuchnummer_input_layout, self.firmenbuchnummer_input = create_field("Firmenbuchnummer:")
+        self.steuernummer_input_layout, self.steuernummer_input = create_field("Steuernummer:")
 
-        # Row 3: Adresse
-        row3_layout = QVBoxLayout()
-        row3_layout.addLayout(create_field_layout("Adresse:", self.adresse_input))
-        center_layout.addLayout(row3_layout)
+        # Add Fields to Layout
+        for input_layout in [
+            self.anrede_input_layout, self.firmenname_input_layout, self.vorname_input_layout, self.nachname_input_layout,
+            self.adresse_input_layout, self.plz_input_layout, self.ort_input_layout, self.land_input_layout,
+            self.telefon_input_layout, self.fax_input_layout, self.email_input_layout, self.firmenbuchnummer_input_layout,
+            self.steuernummer_input_layout
+        ]:
+            layout.addLayout(input_layout)
+            layout.addSpacing(0)
 
-        # Row 4: PLZ, Ort
-        row4_layout = QHBoxLayout()
-        row4_layout.addLayout(create_field_layout("PLZ:", self.plz_input))
-        row4_layout.addLayout(create_field_layout("Ort:", self.ort_input))
-        center_layout.addLayout(row4_layout)
-
-        # Row 5: Land
-        row5_layout = QVBoxLayout()
-        row5_layout.addLayout(create_field_layout("Land:", self.land_input))
-        center_layout.addLayout(row5_layout)
-
-        # Row 6: Telefon, Fax
-        row6_layout = QHBoxLayout()
-        row6_layout.addLayout(create_field_layout("Telefon:", self.telefon_input))
-        row6_layout.addLayout(create_field_layout("Fax:", self.fax_input))
-        center_layout.addLayout(row6_layout)
-
-        # Row 7: E-Mail
-        row7_layout = QVBoxLayout()
-        row7_layout.addLayout(create_field_layout("E-Mail:", self.email_input))
-        center_layout.addLayout(row7_layout)
-
-        # Row 8: Firmenbuchnummer, Steuernummer
-        row8_layout = QHBoxLayout()
-        row8_layout.addLayout(create_field_layout("Firmenbuchnummer:", self.firmenbuchnummer_input))
-        row8_layout.addLayout(create_field_layout("Steuernummer:", self.steuernummer_input))
-        center_layout.addLayout(row8_layout)
-
-        # Add center layout to the main layout
-        main_layout.addLayout(center_layout)
-
-        # Layout for the logo and upload button
-        logo_button_layout = QHBoxLayout()
-        logo_button_layout.setAlignment(Qt.AlignCenter)
-
-        # Label to display the logo
+        # Logo Upload
         self.logo_image_label = QLabel(self)
         self.logo_image_label.setFixedSize(120, 100)
-        self.logo_image_label.setStyleSheet("border: 1px solid #ccc;")
+        self.logo_image_label.setStyleSheet("border: 1px solid #ccc; border-radius: 10px; background: white;")
 
-        # Upload logo button
         self.upload_button = QPushButton("Upload Logo", self)
-        self.upload_button.setIcon(QIcon("resources/icons/upload.png"))
-        self.upload_button.setIconSize(QSize(16, 16))
-        self.upload_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.upload_button.setFixedWidth(150)
-        self.upload_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #007BFF;
-                color: white;
-                padding: 5px 10px;
-                border-radius: 5px;
-                margin-top: 25px;
-            }
-            QPushButton:hover {
-                background-color: #0056b3;
-            }
-            """
-        )
+        self.upload_button.setFixedWidth(250)
+        self.upload_button.setFixedHeight(30)
+        self.upload_button.setStyleSheet("""
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+        """)
         self.upload_button.clicked.connect(self.upload_logo)
 
-        # Add logo and button to the logo_button_layout
-        logo_button_layout.addWidget(self.logo_image_label)
-        logo_button_layout.addWidget(self.upload_button)
+        logo_layout = QHBoxLayout()
+        logo_layout.addWidget(self.logo_image_label)
+        logo_layout.addWidget(self.upload_button)
+        layout.addLayout(logo_layout)
 
-        # Add logo_button_layout to the center_layout
-        center_layout.addLayout(logo_button_layout)
-
-        # Label to display the file path
-        self.file_name_label = QLabel(self)
-        self.file_name_label.setAlignment(Qt.AlignCenter)
-        center_layout.addWidget(self.file_name_label)
-
-        # Save button
-        self.save_button = QPushButton("Save Company Details", self)
-        self.save_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                padding: 5px 10px;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-            """
-        )
+        # Save Button
+#        Save Button
+        self.save_button = QPushButton("Speichern", self)
+        self.save_button.setFixedSize(120, 35)  # Set button size
+        self.save_button.setStyleSheet("""
+            background-color: #000000; 
+            color: white; 
+            padding: 5px; 
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        """)
         self.save_button.clicked.connect(self.save_company_details)
-        center_layout.addWidget(self.save_button)
 
-        main_layout.addStretch()
+        # Center the button
+        save_button_layout = QHBoxLayout()
+        save_button_layout.addStretch()
+        save_button_layout.addWidget(self.save_button)
+        save_button_layout.addStretch()
+
+        layout.addLayout(save_button_layout)  # Add centered button to main layout
+
+        return widget
+
+    def switch_section(self, index):
+        self.content_stack.setCurrentIndex(index)
 
     def load_company_details(self):
-        # Query the database for the existing record
         company_details = session.query(CompanyDetails).first()
-        
         if company_details:
-            # Populate the input fields with existing values
             self.anrede_input.setText(company_details.anrede)
             self.firmenname_input.setText(company_details.firmenname)
             self.vorname_input.setText(company_details.vorname)
@@ -200,121 +226,20 @@ class CompanyDetailsPage(QWidget):
             self.email_input.setText(company_details.email)
             self.firmenbuchnummer_input.setText(company_details.firmenbuchnummer)
             self.steuernummer_input.setText(company_details.steuernummer)
-
-            # Display the logo image if available
             if company_details.logo_image:
                 pixmap = QPixmap()
                 pixmap.loadFromData(company_details.logo_image)
                 self.logo_image_label.setPixmap(pixmap.scaled(120, 100, Qt.KeepAspectRatio))
-            else:
-                self.logo_image_label.clear()
-                self.file_name_label.clear()
 
     def upload_logo(self):
         file_dialog = QFileDialog(self)
-        file_dialog.setFileMode(QFileDialog.ExistingFiles)
         file_dialog.setNameFilter("Images (*.png *.jpg *.bmp)")
-        file_dialog.setViewMode(QFileDialog.List)
         if file_dialog.exec_():
             selected_files = file_dialog.selectedFiles()
             if selected_files:
                 self.logo_image_path = selected_files[0]
                 pixmap = QPixmap(self.logo_image_path)
-                self.logo_image_label.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
-                self.file_name_label.clear()
+                self.logo_image_label.setPixmap(pixmap.scaled(120, 100, Qt.KeepAspectRatio))
 
     def save_company_details(self):
-        # Get the data from the inputs
-        anrede = self.anrede_input.text()
-        firmenname = self.firmenname_input.text()
-        vorname = self.vorname_input.text()
-        nachname = self.nachname_input.text()
-        adresse = self.adresse_input.text()
-        plz = self.plz_input.text()
-        ort = self.ort_input.text()
-        land = self.land_input.text()
-        telefon = self.telefon_input.text()
-        fax = self.fax_input.text()
-        email = self.email_input.text()
-        firmenbuchnummer = self.firmenbuchnummer_input.text()
-        steuernummer = self.steuernummer_input.text()
-
-        # Convert image to binary data if a file was selected
-        logo_image_data = None
-        if hasattr(self, 'logo_image_path'):
-            with open(self.logo_image_path, 'rb') as file:
-                logo_image_data = file.read()
-
-        # Check if a record already exists
-        company_details = session.query(CompanyDetails).first()
-
-        if company_details:
-            # Update existing record
-            company_details.anrede = anrede
-            company_details.firmenname = firmenname
-            company_details.vorname = vorname
-            company_details.nachname = nachname
-            company_details.adresse = adresse
-            company_details.plz = plz
-            company_details.ort = ort
-            company_details.land = land
-            company_details.telefon = telefon
-            company_details.fax = fax
-            company_details.email = email
-            company_details.firmenbuchnummer = firmenbuchnummer
-            company_details.steuernummer = steuernummer
-            company_details.logo_image = logo_image_data
-            print("Updating existing company details in the database.")
-        else:
-            # Insert new record
-            company_details = CompanyDetails(
-                anrede=anrede,
-                firmenname=firmenname,
-                vorname=vorname,
-                nachname=nachname,
-                adresse=adresse,
-                plz=plz,
-                ort=ort,
-                land=land,
-                telefon=telefon,
-                fax=fax,
-                email=email,
-                firmenbuchnummer=firmenbuchnummer,
-                steuernummer=steuernummer,
-                logo_image=logo_image_data
-            )
-            session.add(company_details)
-            print("Inserting new company details into the database.")
-
-        session.commit()
-
-        # Clear the form and show success message
-        # self.clear_form()
-        self.show_success_message()
-
-    def show_success_message(self):
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Information)
-        msg_box.setWindowTitle("Success")
-        msg_box.setText("Company details updated successfully!")
-        msg_box.setStandardButtons(QMessageBox.Ok)
-        msg_box.exec_()
-
-    def clear_form(self):
-        self.anrede_input.clear()
-        self.firmenname_input.clear()
-        self.vorname_input.clear()
-        self.nachname_input.clear()
-        self.adresse_input.clear()
-        self.plz_input.clear()
-        self.ort_input.clear()
-        self.land_input.clear()
-        self.telefon_input.clear()
-        self.fax_input.clear()
-        self.email_input.clear()
-        self.firmenbuchnummer_input.clear()
-        self.steuernummer_input.clear()
-        self.file_name_label.clear()
-        self.logo_image_label.clear()
-        if hasattr(self, 'logo_image_path'):
-            del self.logo_image_path
+        QMessageBox.information(self, "Success", "Company details updated successfully!")

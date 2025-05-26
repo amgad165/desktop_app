@@ -156,7 +156,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Set up HomePage with a "Welcome to the app" label
         self.homePage = QWidget()
         self.homeLayout = QVBoxLayout(self.homePage)
-        self.welcomeLabel = QLabel("Welcome to the app")
+        self.welcomeLabel = QLabel("Willkommen bei der App")
         self.welcomeLabel.setAlignment(Qt.AlignCenter)
         self.homeLayout.addWidget(self.welcomeLabel)
 
@@ -229,7 +229,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def highlight_label(self, label):
         if self.current_label:
             self.current_label.setStyleSheet("")
-        label.setStyleSheet("border: 2px solid #31112C; background-color: #0a0d12;")
+        label.setStyleSheet(" background-color: #ffffff;")
         self.current_label = label
 
     def show_home_page(self):
@@ -336,6 +336,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fade_animation.setStartValue(0)
         self.fade_animation.setEndValue(1)
         self.fade_animation.start()
+        self.ordersPage.load_documents()
         self.stackedWidget.setCurrentWidget(self.ordersPage)  # Switch to ProductsPage
         self.highlight_label(self.ordersContainer)  # Highlight the correct label
 

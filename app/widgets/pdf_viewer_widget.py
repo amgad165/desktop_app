@@ -1,4 +1,4 @@
-import fitz  # PyMuPDF
+from fitz import Document  # PyMuPDF
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
@@ -17,9 +17,9 @@ class PDFViewerWidget(QWidget):
 
     def load_pdf(self, file_path):
         self.clear_layout()
-        doc = fitz.open(file_path)
+        doc = Document(file_path)
         for page_num in range(len(doc)):
-            page = doc.load_page(page_num)
+            page = doc[page_num]
             pix = page.get_pixmap()
             image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
             label = QLabel(self)

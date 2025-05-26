@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QTableWidgetItem, QMessageBox
 from app.models.app_models import Product, session
 
 
+
 class ProductsPage(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -18,25 +19,136 @@ class ProductsPage(QtWidgets.QWidget):
         self.layout.setObjectName("mainLayout")
 
         # Add productsLabel at the top of the page
-        self.productsLabel = QtWidgets.QLabel("Products", self)
+        self.productsLabel = QtWidgets.QLabel("Produkte", self)
         self.productsLabel.setObjectName("productsLabel")
 
         # Set the font size and style
         font = QtGui.QFont()
-        font.setPointSize(20)  # Set font size (increase as per requirement)
+        font.setPointSize(20)
         self.productsLabel.setFont(font)
-
-        # Center align the label
         self.productsLabel.setAlignment(QtCore.Qt.AlignCenter)
 
         # Add the label to the layout
         self.layout.addWidget(self.productsLabel)
 
-        # Search bar
-        self.searchInput = QtWidgets.QLineEdit(self)
-        self.searchInput.setPlaceholderText("Search Products")
+        # --- Styled search container for products ---
+        self.searchContainer = QtWidgets.QWidget(self)
+        self.searchContainer.setFixedHeight(60)
+        self.searchContainer.setStyleSheet("""
+            QWidget {
+                background-color: #e0e0e0;
+                border-radius: 20px;
+            }
+        """)
+        self.searchContainerLayout = QtWidgets.QHBoxLayout(self.searchContainer)
+        self.searchContainerLayout.setContentsMargins(12, 6, 12, 6)
+        self.searchContainerLayout.setSpacing(8)
+
+        # Search icon
+        searchIconLabel = QtWidgets.QLabel()
+        searchIconLabel.setFixedSize(28, 28)
+        searchIconLabel.setAlignment(QtCore.Qt.AlignCenter)
+        iconPath = "resources/icons/search_blue.png"
+        pixmap = QtGui.QPixmap(iconPath)
+
+        if pixmap.isNull():
+            import os
+            absolute_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), iconPath)
+            pixmap = QtGui.QPixmap(absolute_path)
+
+        if pixmap.isNull():
+            searchIconLabel.setText("🔍")
+            searchIconLabel.setStyleSheet("""
+                QLabel {
+                    color: #666;
+                    font-size: 16px;
+                    background: transparent;
+                }
+            """)
+        else:
+            scaledPixmap = QtGui.QPixmap(22, 22)
+            scaledPixmap.fill(QtCore.Qt.transparent)
+            painter = QtGui.QPainter(scaledPixmap)
+            painter.setRenderHint(QtGui.QPainter.Antialiasing)
+            painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+            painter.drawPixmap(
+                0, 0, 22, 22,
+                pixmap.scaled(22, 22, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+            )
+            painter.end()
+            searchIconLabel.setPixmap(scaledPixmap)
+
+        searchIconLabel.setStyleSheet("""
+            QLabel {
+                background: transparent;
+                padding: 0px;
+                margin: 0px;
+            }
+        """)
+        self.searchContainerLayout.addWidget(searchIconLabel)
+        self.searchContainerLayout.addSpacing(8)
+
+        # Styled search input
+        self.searchInput = QtWidgets.QLineEdit()
+        self.searchInput.setPlaceholderText("Suche...")
         self.searchInput.textChanged.connect(self.filter_products)
-        self.layout.addWidget(self.searchInput)
+        self.searchInput.setStyleSheet("""
+            QLineEdit {
+                background-color: white;
+                border: none;
+                border-radius: 12px;
+                padding: 8px 12px;
+                font-size: 14px;
+                color: #333;
+            }
+            QLineEdit:focus {
+                outline: none;
+            }
+        """)
+        self.searchInput.setMinimumWidth(400)
+        self.searchContainerLayout.addWidget(self.searchInput, 1)
+
+        # Spacer
+        self.searchContainerLayout.addStretch()
+
+        # Icon button style
+        iconBtnStyle = """
+            QPushButton {
+                background-color: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #d0d0d0;
+                border-radius: 8px;
+            }
+        """
+
+        # Add Button
+        self.addButton = QtWidgets.QPushButton()
+        self.addButton.setIcon(QtGui.QIcon('resources/icons/plus_b.png'))
+        self.addButton.setIconSize(QtCore.QSize(22, 22))
+        self.addButton.setToolTip("Produkt hinzufügen")
+        self.addButton.setStyleSheet(iconBtnStyle)
+        self.searchContainerLayout.addWidget(self.addButton)
+
+        # Edit Button
+        self.editButton = QtWidgets.QPushButton()
+        self.editButton.setIcon(QtGui.QIcon('resources/icons/edit_b.png'))
+        self.editButton.setIconSize(QtCore.QSize(20, 20))
+        self.editButton.setToolTip("Produkt bearbeiten")
+        self.editButton.setStyleSheet(iconBtnStyle)
+        self.searchContainerLayout.addWidget(self.editButton)
+
+        # Delete Button
+        self.deleteButton = QtWidgets.QPushButton()
+        self.deleteButton.setIcon(QtGui.QIcon('resources/icons/delete_b.png'))
+        self.deleteButton.setIconSize(QtCore.QSize(22, 22))
+        self.deleteButton.setToolTip("Produkt löschen")
+        self.deleteButton.setStyleSheet(iconBtnStyle)
+        self.searchContainerLayout.addWidget(self.deleteButton)
+
+        # Add search container to layout
+        self.layout.addWidget(self.searchContainer)
 
         # Table for products
         self.productsTable = QtWidgets.QTableWidget(self)
@@ -49,36 +161,6 @@ class ProductsPage(QtWidgets.QWidget):
         self.productsTable.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.productsTable.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.layout.addWidget(self.productsTable)
-
-        # Buttons for add, edit, and delete
-        self.buttonsLayout = QtWidgets.QHBoxLayout()
-
-        # Add button with right-aligned icon and larger text
-        self.addButton = QPushButton("Add", self)
-        self.addButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
-        self.addButton.setIconSize(QtCore.QSize(17, 17))  # Set the size of the icon
-        self.addButton.setLayoutDirection(QtCore.Qt.RightToLeft)  # Icon on the right
-        self.addButton.setStyleSheet("font-size: 16px;")  # Set larger font size
-
-        # Edit button with right-aligned icon and larger text
-        self.editButton = QPushButton("Edit ", self)
-        self.editButton.setIcon(QtGui.QIcon('resources/icons/edit.png'))
-        self.editButton.setIconSize(QtCore.QSize(16, 16))  # Set the size of the icon
-        self.editButton.setLayoutDirection(QtCore.Qt.RightToLeft)  # Icon on the right
-        self.editButton.setStyleSheet("font-size: 16px;")  # Set larger font size
-
-        # Delete button with right-aligned icon and larger text
-        self.deleteButton = QPushButton("Delete ", self)
-        self.deleteButton.setIcon(QtGui.QIcon('resources/icons/delete.png'))
-        self.deleteButton.setIconSize(QtCore.QSize(17, 17))  # Set the size of the icon
-        self.deleteButton.setLayoutDirection(QtCore.Qt.RightToLeft)  # Icon on the right
-        self.deleteButton.setStyleSheet("font-size: 16px;")  # Set larger font size
-
-        # Add buttons to layout
-        self.buttonsLayout.addWidget(self.addButton)
-        self.buttonsLayout.addWidget(self.editButton)
-        self.buttonsLayout.addWidget(self.deleteButton)
-        self.layout.addLayout(self.buttonsLayout)
 
         self.retranslateUi()
         self.load_products()
@@ -127,13 +209,13 @@ class ProductsPage(QtWidgets.QWidget):
     def edit_product(self):
         selected_row = self.productsTable.currentRow()
         if selected_row < 0:
-            QMessageBox.warning(self, "Edit Error", "Please select a product to edit.")
+            QMessageBox.warning(self, "Bearbeitungsfehler", "Bitte wählen Sie ein Produkt zum Bearbeiten aus.")
             return
         product_id = self.productsTable.item(selected_row, 1).text()
         product = session.query(Product).filter_by(nummer=product_id).first()
 
         if not product:
-            QMessageBox.warning(self, "Edit Error", "Product not found.")
+            QMessageBox.warning(self, "Bearbeitungsfehler", "Produkt nicht gefunden.")
             return
 
         dialog = ProductDialog(self, product)
@@ -147,17 +229,17 @@ class ProductsPage(QtWidgets.QWidget):
     def delete_product(self):
         selected_row = self.productsTable.currentRow()
         if selected_row < 0:
-            QMessageBox.warning(self, "Delete Error", "Please select a product to delete.")
+            QMessageBox.warning(self, "Löschfehler", "Bitte wählen Sie ein Produkt zum Löschen aus.")
             return
         product_id = self.productsTable.item(selected_row, 1).text()
         product = session.query(Product).filter_by(nummer=product_id).first()
 
         if not product:
-            QMessageBox.warning(self, "Delete Error", "Product not found.")
+            QMessageBox.warning(self, "Löschfehler", "Produkt nicht gefunden.")
             return
 
-        reply = QMessageBox.question(self, 'Delete Confirmation',
-                                     "Are you sure you want to delete this product?",
+        reply = QMessageBox.question(self, 'Löschbestätigung',
+                                     "Sind Sie sicher, dass Sie dieses Produkt löschen möchten?",
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             session.delete(product)
@@ -172,9 +254,11 @@ class ProductDialog(QDialog):
         self.setupUi()
 
     def setupUi(self):
-        self.setWindowTitle("Product Details")
+        self.setWindowTitle("Produkte")
         self.setModal(True)
         layout = QFormLayout(self)
+        # Style for labels
+        label_style = "color: white; font-size: 14px;"
 
         # Fields
         self.gruppeEdit = QLineEdit(self)
@@ -191,11 +275,13 @@ class ProductDialog(QDialog):
             ("Verkaufspreis", self.verkaufspreisEdit),
         ]
 
-        for label, field in fields:
+        for label_text, field in fields:
+            label = QtWidgets.QLabel(label_text)
+            label.setStyleSheet(label_style)
             layout.addRow(label, field)
 
-        self.saveButton = QPushButton("Save", self)
-        self.cancelButton = QPushButton("Cancel", self)
+        self.saveButton = QPushButton("Speichern", self)
+        self.cancelButton = QPushButton("Stornieren", self)
         button_layout = QVBoxLayout()
         button_layout.addWidget(self.saveButton)
         button_layout.addWidget(self.cancelButton)

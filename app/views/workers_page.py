@@ -15,68 +15,130 @@ class WorkersPage(QtWidgets.QWidget):
         # Main layout
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setObjectName("mainLayout")
-        # Add workersLabel at the top of the page
-        self.workersLabel = QtWidgets.QLabel("Workers List", self)
-        self.workersLabel.setObjectName("workersLabel")
 
-        # Set the font size and style
+        # Title label
+        self.workersLabel = QtWidgets.QLabel("Mitarbeiterliste", self)
+        self.workersLabel.setObjectName("workersLabel")
         font = QtGui.QFont()
         font.setPointSize(20)
         self.workersLabel.setFont(font)
-
-        # Center align the label
         self.workersLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.layout.addWidget(self.workersLabel)
 
-        # Search bar
-        self.searchInput = QtWidgets.QLineEdit(self)
-        self.searchInput.setPlaceholderText("Search Workers")
-        self.searchInput.textChanged.connect(self.filter_workers)
-        self.layout.addWidget(self.searchInput)
+        # --- Styled search container ---
+        self.searchContainer = QtWidgets.QWidget(self)
+        self.searchContainer.setFixedHeight(60)
+        self.searchContainer.setStyleSheet("""
+            QWidget {
+                background-color: #e0e0e0;
+                border-radius: 20px;
+            }
+        """)
+        self.searchContainerLayout = QtWidgets.QHBoxLayout(self.searchContainer)
+        self.searchContainerLayout.setContentsMargins(12, 6, 12, 6)
+        self.searchContainerLayout.setSpacing(8)
 
-        # Table for workers
+        # Search icon
+        searchIconLabel = QtWidgets.QLabel()
+        searchIconLabel.setFixedSize(28, 28)
+        searchIconLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        iconPath = "resources/icons/search_blue.png"
+        pixmap = QtGui.QPixmap(iconPath)
+        if pixmap.isNull():
+            import os
+            absolute_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), iconPath)
+            pixmap = QtGui.QPixmap(absolute_path)
+        if pixmap.isNull():
+            searchIconLabel.setText("🔍")
+            searchIconLabel.setStyleSheet("QLabel { color: #666; font-size: 16px; background: transparent; }")
+        else:
+            scaledPixmap = QtGui.QPixmap(22, 22)
+            scaledPixmap.fill(QtCore.Qt.transparent)
+            painter = QtGui.QPainter(scaledPixmap)
+            painter.setRenderHint(QtGui.QPainter.Antialiasing)
+            painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+            painter.drawPixmap(0, 0, 22, 22, pixmap.scaled(22, 22, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation))
+            painter.end()
+            searchIconLabel.setPixmap(scaledPixmap)
+        searchIconLabel.setStyleSheet("QLabel { background: transparent; padding: 0px; margin: 0px; }")
+
+        self.searchContainerLayout.addWidget(searchIconLabel)
+        self.searchContainerLayout.addSpacing(8)
+
+        # Search input
+        self.searchInput = QtWidgets.QLineEdit()
+        self.searchInput.setPlaceholderText("Suche...")
+        self.searchInput.textChanged.connect(self.filter_workers)
+        self.searchInput.setStyleSheet("""
+            QLineEdit {
+                background-color: white;
+                border: none;
+                border-radius: 12px;
+                padding: 8px 12px;
+                font-size: 14px;
+                color: #333;
+            }
+            QLineEdit:focus {
+                outline: none;
+            }
+        """)
+        self.searchInput.setMinimumWidth(400)
+        self.searchContainerLayout.addWidget(self.searchInput, 1)
+
+        self.searchContainerLayout.addStretch()
+
+        # --- Icon-only buttons with hover ---
+        iconBtnStyle = """
+            QPushButton {
+                background-color: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #d0d0d0;
+                border-radius: 8px;
+            }
+        """
+
+        self.addButton = QtWidgets.QPushButton()
+        self.addButton.setIcon(QtGui.QIcon('resources/icons/plus_b.png'))
+        self.addButton.setIconSize(QtCore.QSize(22, 22))
+        self.addButton.setToolTip("Mitarbeiter hinzufügen")
+        self.addButton.setStyleSheet(iconBtnStyle)
+        self.searchContainerLayout.addWidget(self.addButton)
+
+        self.editButton = QtWidgets.QPushButton()
+        self.editButton.setIcon(QtGui.QIcon('resources/icons/edit_b.png'))
+        self.editButton.setIconSize(QtCore.QSize(20, 20))
+        self.editButton.setToolTip("Mitarbeiter bearbeiten")
+        self.editButton.setStyleSheet(iconBtnStyle)
+        self.searchContainerLayout.addWidget(self.editButton)
+
+        self.deleteButton = QtWidgets.QPushButton()
+        self.deleteButton.setIcon(QtGui.QIcon('resources/icons/delete_b.png'))
+        self.deleteButton.setIconSize(QtCore.QSize(22, 22))
+        self.deleteButton.setToolTip("Mitarbeiter löschen")
+        self.deleteButton.setStyleSheet(iconBtnStyle)
+        self.searchContainerLayout.addWidget(self.deleteButton)
+
+        self.layout.addWidget(self.searchContainer)
+
+        # Workers table
         self.workersTable = QtWidgets.QTableWidget(self)
         self.workersTable.setColumnCount(9)
-        self.workersTable.setHorizontalHeaderLabels(
-            ["Status", "Nummer", "Worker", "Adresse", "PLZ", "Ort", "Telefon", "Mobil", "eMail"]
-        )
+        self.workersTable.setHorizontalHeaderLabels([
+            "Status", "Nummer", "Worker", "Adresse", "PLZ", "Ort", "Telefon", "Mobil", "eMail"
+        ])
         self.workersTable.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.workersTable.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         self.workersTable.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.workersTable.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.layout.addWidget(self.workersTable)
 
-        # Buttons for add, edit, and delete
-        self.buttonsLayout = QtWidgets.QHBoxLayout()
-
-        # Add button
-        self.addButton = QPushButton("Add", self)
-        self.addButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
-        self.addButton.setIconSize(QtCore.QSize(17, 17))
-        self.addButton.setStyleSheet("font-size: 16px;")
-
-        # Edit button
-        self.editButton = QPushButton("Edit", self)
-        self.editButton.setIcon(QtGui.QIcon('resources/icons/edit.png'))
-        self.editButton.setIconSize(QtCore.QSize(16, 16))
-        self.editButton.setStyleSheet("font-size: 16px;")
-
-        # Delete button
-        self.deleteButton = QPushButton("Delete", self)
-        self.deleteButton.setIcon(QtGui.QIcon('resources/icons/delete.png'))
-        self.deleteButton.setIconSize(QtCore.QSize(17, 17))
-        self.deleteButton.setStyleSheet("font-size: 16px;")
-
-        # Add buttons to layout
-        self.buttonsLayout.addWidget(self.addButton)
-        self.buttonsLayout.addWidget(self.editButton)
-        self.buttonsLayout.addWidget(self.deleteButton)
-        self.layout.addLayout(self.buttonsLayout)
-
         self.retranslateUi()
         self.load_workers()
 
-        # Connect buttons to functions
+        # Connect signals
         self.addButton.clicked.connect(self.add_worker)
         self.editButton.clicked.connect(self.edit_worker)
         self.deleteButton.clicked.connect(self.delete_worker)
@@ -120,13 +182,13 @@ class WorkersPage(QtWidgets.QWidget):
     def edit_worker(self):
         selected_row = self.workersTable.currentRow()
         if selected_row < 0:
-            QMessageBox.warning(self, "Edit Error", "Please select a worker to edit.")
+            QMessageBox.warning(self, "Bearbeitungsfehler", "Bitte wählen Sie einen Mitarbeiter zum Bearbeiten aus.")
             return
         worker_id = self.workersTable.item(selected_row, 1).text()
         worker = session.query(Worker).filter_by(nummer=worker_id).first()
 
         if not worker:
-            QMessageBox.warning(self, "Edit Error", "Worker not found.")
+            QMessageBox.warning(self, "Bearbeitungsfehler", "Mitarbeiter nicht gefunden.")
             return
 
         dialog = WorkerDialog(self, worker)
@@ -140,17 +202,17 @@ class WorkersPage(QtWidgets.QWidget):
     def delete_worker(self):
         selected_row = self.workersTable.currentRow()
         if selected_row < 0:
-            QMessageBox.warning(self, "Delete Error", "Please select a worker to delete.")
+            QMessageBox.warning(self, "Löschfehler", "Bitte wählen Sie einen Mitarbeiter zum Löschen aus.")
             return
         worker_id = self.workersTable.item(selected_row, 1).text()
         worker = session.query(Worker).filter_by(nummer=worker_id).first()
 
         if not worker:
-            QMessageBox.warning(self, "Delete Error", "Worker not found.")
+            QMessageBox.warning(self, "Löschfehler", "Mitarbeiter nicht gefunden.")
             return
 
-        reply = QMessageBox.question(self, 'Delete Confirmation',
-                                     "Are you sure you want to delete this worker?",
+        reply = QMessageBox.question(self, 'Löschbestätigung',
+                                     "Sind Sie sicher, dass Sie diesen Mitarbeiter löschen möchten?",
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             session.delete(worker)
@@ -167,6 +229,9 @@ class WorkerDialog(QDialog):
         self.setWindowTitle("Worker Details")
         self.setModal(True)
         layout = QFormLayout(self)
+
+        # Style for labels
+        label_style = "color: white; font-size: 14px;"
 
         # Fields
         self.numberEdit = QLineEdit(self)
@@ -189,11 +254,15 @@ class WorkerDialog(QDialog):
             ("Email", self.emailEdit),
         ]
 
-        for label, field in fields:
+        for label_text, field in fields:
+            label = QtWidgets.QLabel(label_text)
+            label.setStyleSheet(label_style)
             layout.addRow(label, field)
 
-        self.saveButton = QPushButton("Save", self)
-        self.cancelButton = QPushButton("Cancel", self)
+            layout.addRow(label, field)
+
+        self.saveButton = QPushButton("Speichern", self)
+        self.cancelButton = QPushButton("Stornieren", self)
         button_layout = QVBoxLayout()
         button_layout.addWidget(self.saveButton)
         button_layout.addWidget(self.cancelButton)

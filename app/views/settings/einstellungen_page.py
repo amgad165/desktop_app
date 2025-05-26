@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLabel,
-    QTableWidget, QTableWidgetItem, QStackedWidget, QLineEdit, QFormLayout, QMessageBox
+    QWidget, QVBoxLayout, QHBoxLayout, QListWidgetItem, QPushButton, QListWidget, QLabel,
+    QTableWidget, QTableWidgetItem, QStackedWidget, QLineEdit, QMessageBox, QInputDialog,QHeaderView
 )
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt, QSize
 
 from app.models.app_models import Anreden, Einheiten, Lander, Zahlungsarten, session
@@ -14,11 +14,11 @@ class EinstellungenPage(QWidget):
         self.parent = parent
 
         # Main Layout
-        main_layout = QVBoxLayout(self)  # Changed to QVBoxLayout for top-down arrangement
+        main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Top Layout for Back Button
+        # Top Layout (Back Button)
         top_layout = QHBoxLayout()
         top_layout.setAlignment(Qt.AlignLeft)
 
@@ -31,42 +31,51 @@ class EinstellungenPage(QWidget):
         top_layout.addWidget(back_button)
         main_layout.addLayout(top_layout)
 
-        # Bottom Layout for Sidebar and Content
+        # Bottom Layout (Sidebar + Content)
         bottom_layout = QHBoxLayout()
         bottom_layout.setContentsMargins(0, 0, 0, 0)
-        bottom_layout.setSpacing(0)
+        bottom_layout.setSpacing(20)
 
         # Sidebar
         self.sidebar = QListWidget()
-        self.sidebar.setFixedWidth(250)
+        self.sidebar.setFixedWidth(400)
+        self.sidebar.setSpacing(10)
         self.sidebar.setStyleSheet("""
             QListWidget {
-                background-color: #1c1c1e;
-                color: #dcdcdc;
-                font-size: 16px;
                 border: none;
-                padding: 5px;
+                font-size: 18px;
+                font-weight: bold;
+                background-color: transparent;
             }
             QListWidget::item {
-                padding: 10px;
-                border-bottom: 1px solid #2a2a2c;
+                background-color: #e8e4e4;
+                padding: 5px;
+                font-size: 18px;
+                font-weight: bold;
+                border-radius: 10px;
+                margin: 3px 0px;
+                text-align: center;
             }
             QListWidget::item:selected {
-                background-color: #256d85;
-                color: white;
+                background-color: #b8b4b4;
             }
         """)
-        self.sidebar.addItem("Anreden")
-        self.sidebar.addItem("Einheiten")
-        self.sidebar.addItem("Lander")
-        self.sidebar.addItem("Zahlungsarten")
+
+        # Sidebar Items
+        items = ["Anreden", "Einheiten", "Lander", "Zahlungsarten"]
+        for item_text in items:
+            item = QListWidgetItem(item_text)
+            item.setTextAlignment(Qt.AlignCenter)
+            self.sidebar.addItem(item)
+
+        self.sidebar.setCurrentRow(0)
         self.sidebar.currentRowChanged.connect(self.change_table)
         bottom_layout.addWidget(self.sidebar)
 
-        # Stacked Widget for Table Content
+        # Content Area
         self.stacked_widget = QStackedWidget()
-        self.stacked_widget.setStyleSheet("background-color: #2c2c2e; padding: 10px;")
-        bottom_layout.addWidget(self.stacked_widget)
+        self.stacked_widget.setStyleSheet("background-color: #ffffff; border-radius: 10px; padding: 20px;")
+        bottom_layout.addWidget(self.stacked_widget, 1)
 
         main_layout.addLayout(bottom_layout)
 
@@ -76,114 +85,137 @@ class EinstellungenPage(QWidget):
         self.add_table_section("Lander", ["ID", "Country"], Lander, ["land"])
         self.add_table_section("Zahlungsarten", ["ID", "Payment Method"], Zahlungsarten, ["payment_method"])
 
-
     def add_table_section(self, title, headers, model, input_labels):
-        # Table Section
         table_section = QWidget()
         layout = QVBoxLayout(table_section)
 
         # Title
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 24px; font-weight: bold; margin: 10px 0; color: #dcdcdc;")
+        title_label.setFont(QFont("Arial", 20, QFont.Bold))
+        title_label.setStyleSheet("color: #1c1c1e; margin-bottom: 10px;")
         layout.addWidget(title_label)
 
-        # Table
-        table = QTableWidget()
-        table.setColumnCount(len(headers))
-        table.setHorizontalHeaderLabels(headers)
-        table.setEditTriggers(QTableWidget.NoEditTriggers)  # Disable direct editing
-        table.setStyleSheet("""
-            QTableWidget {
-                background-color: #1c1c1e;
-                border: 1px solid #3a3a3c;
-                color: #dcdcdc;
-                alternate-background-color: #2c2c2e;
-            }
-            QTableWidget::item {
-                color: #dcdcdc;
-            }
-            QTableWidget::item:selected {
-                background-color: #3a3a3c;
-                color: white;
-            }
-            QHeaderView::section {
-                background-color: #2c2c2e;
-                color: #dcdcdc;
-                border: 1px solid #3a3a3c;
-                height: 35px; /* Adjusts the overall height of header sections */
-            }
-        """)
-        table.setAlternatingRowColors(True)
-        layout.addWidget(table)
-
-        # Load initial data from the database
-        self.load_table_data(table, model)
-
-        # Input Form
-        form_layout = QFormLayout()
+        # Input Form & Add Button
+        input_layout = QHBoxLayout()
         form_inputs = {}
+
         for label in input_labels:
             input_field = QLineEdit()
             input_field.setPlaceholderText(f"Enter {label.lower()}")
-            input_field.setStyleSheet("""
-                QLineEdit {
-                    background-color: #1c1c1e;
-                    border: 1px solid #3a3a3c;
-                    border-radius: 4px;
-                    padding: 5px;
-                    color: #dcdcdc;
-                }
-                QLineEdit:focus {
-                    border-color: #3498db;
-                }
-            """)
-            form_layout.addRow(label.capitalize(), input_field)
+            input_layout.addWidget(input_field)
             form_inputs[label] = input_field
-        layout.addLayout(form_layout)
 
-        # Add, Edit, Delete Buttons
-        # Add Button with Icon
-        button_layout = QHBoxLayout()
- 
-        add_button = QPushButton("Add")
-        add_button.setStyleSheet(self.get_button_style("#27ae60", "#2ecc71"))
-        add_button.setIcon(QIcon("resources/icons/plus.png"))  # Replace with the path to your add icon
+        add_button = self.create_button("", "#27ae60", "#2ecc71", "resources/icons/plus.png")
+        add_button.setFixedSize(40, 40)
         add_button.clicked.connect(lambda: self.add_record(model, form_inputs, table))
+        input_layout.addWidget(add_button)
 
-        # Edit Button with Icon
-        edit_button = QPushButton("Edit")
-        edit_button.setStyleSheet(self.get_button_style("#f39c12", "#f1c40f"))
-        edit_button.setIcon(QIcon("resources/icons/edit.png"))  # Replace with the path to your edit icon
-        edit_button.clicked.connect(lambda: self.edit_record(model, form_inputs, table))
+        layout.addLayout(input_layout)
 
-        # Delete Button with Icon
-        delete_button = QPushButton("Delete")
-        delete_button.setStyleSheet(self.get_button_style("#c0392b", "#e74c3c"))
-        delete_button.setIcon(QIcon("resources/icons/x.png"))  # Replace with the path to your delete icon
-        delete_button.clicked.connect(lambda: self.delete_record(model, table))
+        # Table
+        table = QTableWidget()
+        table.setColumnCount(len(headers) + 2)  # Extra columns for Edit & Delete
+        table.setHorizontalHeaderLabels(headers + ["Edit", "Delete"])
+        table.setEditTriggers(QTableWidget.NoEditTriggers)
+        table.setAlternatingRowColors(True)
 
-        # Add buttons to layout
-        button_layout.addWidget(add_button)
-        button_layout.addWidget(edit_button)
-        button_layout.addWidget(delete_button)
-        layout.addLayout(button_layout)
+        # Set column width for value cells
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)  # Expand value column
+        table.setColumnHidden(0, True)  # Hide the ID column
 
-        # Add the section to the stacked widget
+        # Set width for edit and delete buttons
+        table.setColumnWidth(len(headers), 60)  # Edit button column
+        table.setColumnWidth(len(headers) + 1, 60)  # Delete button column
+        table.verticalHeader().setVisible(False)
+
+
+        # Hide Scrollbar and Adjust Styles
+        table.setStyleSheet("""
+            QTableWidget {
+                background-color: #ffffff;
+                border: 1px solid #ddd;
+                alternate-background-color: #f5f5f5;
+            }
+            QTableWidget::item {
+                color: black; /* Ensure table text is black */
+            }
+            QTableWidget::item:selected {
+                background-color: #b8b4b4;
+                color: white;
+            }
+            QHeaderView::section {
+                background-color: #333; /* Dark background */
+                color: white; /* White text for contrast */
+                font-size: 14px;
+                font-weight: bold;
+                border: 1px solid #aaa;
+                padding: 5px;
+            }
+            QScrollBar:vertical {
+                width: 0px; /* Hide scrollbar */
+                background: transparent;
+            }
+        """)
+
+
+
+        layout.addWidget(table)
+
+        self.load_table_data(table, model)
         self.stacked_widget.addWidget(table_section)
 
+    def create_button(self, text, color, hover_color, icon_path):
+        button = QPushButton(text)
+        button.setIcon(QIcon(icon_path))
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color};
+                color: white;
+                padding: 10px;
+                font-size: 16px;
+                font-weight: bold;
+                border-radius: 6px;
+            }}
+            QPushButton:hover {{
+                background-color: {hover_color};
+            }}
+        """)
+        return button
+
     def load_table_data(self, table, model):
-        """Load data from the database into the table."""
-        table.setRowCount(0)  # Clear existing rows
+        table.setRowCount(0)
         records = session.query(model).all()
+
         for record in records:
             row = table.rowCount()
             table.insertRow(row)
+
             for col, attr in enumerate(record.__table__.columns.keys()):
-                value = getattr(record, attr, "")
-                table.setItem(row, col, QTableWidgetItem(str(value)))
+                table.setItem(row, col, QTableWidgetItem(str(getattr(record, attr, ""))))
+
+            # Edit Button (Dark Background)
+            edit_button = QPushButton()
+            edit_button.setIcon(QIcon("resources/icons/edit.png"))
+            edit_button.setStyleSheet("background-color: #333; border-radius: 5px;")
+            edit_button.setFixedSize(30, 30)
+            edit_button.clicked.connect(lambda _, r=record, t=table: self.edit_record(r, model, t))
+
+            # Delete Button (Dark Background)
+            delete_button = QPushButton()
+            delete_button.setIcon(QIcon("resources/icons/x.png"))
+            delete_button.setStyleSheet("background-color: #333; border-radius: 5px;")
+            delete_button.setFixedSize(30, 30)
+            delete_button.clicked.connect(lambda _, r=record, t=table: self.delete_record(r, model, t))
+
+            table.setCellWidget(row, len(record.__table__.columns.keys()), edit_button)
+            table.setCellWidget(row, len(record.__table__.columns.keys()) + 1, delete_button)
+
+            # Set column width to avoid button overlay issues
+            table.setRowHeight(row, 40)
+            table.setColumnWidth(len(record.__table__.columns.keys()), 50)
+            table.setColumnWidth(len(record.__table__.columns.keys()) + 1, 50)
 
     def add_record(self, model, form_inputs, table):
-        """Add a new record to the database and refresh the table."""
         try:
             new_record = model()
             for key, input_field in form_inputs.items():
@@ -193,59 +225,21 @@ class EinstellungenPage(QWidget):
             self.load_table_data(table, model)
             for input_field in form_inputs.values():
                 input_field.clear()
-            QMessageBox.information(self, "Success", f"New {model.__tablename__} record added.")
         except Exception as e:
             session.rollback()
             QMessageBox.critical(self, "Error", f"Failed to add record: {str(e)}")
 
-    def edit_record(self, model, form_inputs, table):
-        """Edit the selected record."""
-        try:
-            selected_row = table.currentRow()
-            if selected_row == -1:
-                QMessageBox.warning(self, "Warning", "Please select a record to edit.")
-                return
-            record_id = int(table.item(selected_row, 0).text())
-            record = session.query(model).get(record_id)
-            for key, input_field in form_inputs.items():
-                setattr(record, key, input_field.text())
+    def edit_record(self, record, model, table):
+        new_value, ok = QInputDialog.getText(self, "Edit Record", f"Enter new value:")
+        if ok and new_value.strip():
+            setattr(record, list(record.__table__.columns.keys())[1], new_value.strip())
             session.commit()
             self.load_table_data(table, model)
-            QMessageBox.information(self, "Success", "Record updated successfully.")
-        except Exception as e:
-            session.rollback()
-            QMessageBox.critical(self, "Error", f"Failed to update record: {str(e)}")
 
-    def delete_record(self, model, table):
-        """Delete the selected record."""
-        try:
-            selected_row = table.currentRow()
-            if selected_row == -1:
-                QMessageBox.warning(self, "Warning", "Please select a record to delete.")
-                return
-            record_id = int(table.item(selected_row, 0).text())
-            record = session.query(model).get(record_id)
-            session.delete(record)
-            session.commit()
-            self.load_table_data(table, model)
-            QMessageBox.information(self, "Success", "Record deleted successfully.")
-        except Exception as e:
-            session.rollback()
-            QMessageBox.critical(self, "Error", f"Failed to delete record: {str(e)}")
-
-    def get_button_style(self, color, hover_color):
-        return f"""
-            QPushButton {{
-                background-color: {color};
-                color: white;
-                padding: 7px 15px;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: {hover_color};
-            }}
-        """
+    def delete_record(self, record, model, table):
+        session.delete(record)
+        session.commit()
+        self.load_table_data(table, model)
 
     def change_table(self, index):
-        """Change the displayed table section based on sidebar selection."""
         self.stacked_widget.setCurrentIndex(index)

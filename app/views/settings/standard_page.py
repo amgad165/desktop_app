@@ -1,14 +1,12 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QLabel, QLineEdit, QComboBox, QRadioButton, QHBoxLayout,QPushButton, QFormLayout, QMessageBox, QButtonGroup, QWidget
+from PyQt5.QtWidgets import QLabel, QLineEdit, QComboBox, QHBoxLayout, QPushButton, QFormLayout, QMessageBox, QWidget, QVBoxLayout, QSpacerItem, QSizePolicy
+from PyQt5.QtCore import Qt
 from app.models.app_models import billSettings, session
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QSize
 
 class StandardPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
-
         self.setupUi()
         self.load_settings()
 
@@ -16,117 +14,91 @@ class StandardPage(QWidget):
         self.setObjectName("StandardPage")
         self.resize(600, 400)
 
-        # Main layout
-        self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.setObjectName("mainLayout")
-
-        # Top Layout for Back Button
-        top_layout = QHBoxLayout()
-        top_layout.setAlignment(Qt.AlignLeft)
-
-        back_button = QPushButton(self)
-        back_button.setIcon(QIcon("resources/icons/arrow-left.png"))
-        back_button.setIconSize(QSize(24, 24))
-        back_button.setStyleSheet("border: none; background-color: transparent;")
-        back_button.clicked.connect(self.parent.go_back_to_settings_page)
-
-        top_layout.addWidget(back_button)
-        self.layout.addLayout(top_layout)
-
+        # Main vertical layout
+        self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(20, 20, 20, 20)
+        self.layout.setAlignment(Qt.AlignTop)
 
         # Header label
-        self.headerLabel = QLabel("Standard Einstellungen", self)
-        font = QtGui.QFont()
-        font.setPointSize(18)
-        self.headerLabel.setFont(font)
-        self.headerLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.headerLabel = QLabel("Einstellungen", self)
+        self.headerLabel.setStyleSheet("font-size: 18px; font-weight: bold;")
+        self.headerLabel.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.headerLabel)
 
         # Form layout for settings
         self.formLayout = QFormLayout()
         self.formLayout.setHorizontalSpacing(20)
-        self.layout.addLayout(self.formLayout)
 
-        # Styling: Smaller inputs, centered rows
-        self.inputStyle = "padding: 5px; width: 100px; border: 1px solid #ccc; border-radius: 3px;"
-        self.radioStyle = "QRadioButton { padding: 0px; background: none; border: none; }"
+        # Input style (matching NummernvergabePage)
+        self.inputStyle = """
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            color: black;
+            height: 30px;
+            font-size: 14px;
+        """
 
         # Currency
         self.currencyLabel = QLabel("Währung:", self)
+        self.currencyLabel.setStyleSheet("font-weight: bold;")
         self.currencySelect = QComboBox(self)
         self.currencySelect.addItems(["$", "€", "£"])
         self.currencySelect.setStyleSheet(self.inputStyle)
-        self.formLayout.addRow(self.create_centered_row(self.currencyLabel, self.currencySelect))
+        self.formLayout.addRow(self.create_input_row(self.currencyLabel, self.currencySelect))
 
         # Decimal Places
-        self.decimalPlacesLabel = QLabel("Dezimalstellen:", self)
+        self.decimalPlacesLabel = QLabel("Nachkommastellen:", self)
+        self.decimalPlacesLabel.setStyleSheet("font-weight: bold;")
         self.decimalPlacesInput = QLineEdit(self)
-        self.decimalPlacesInput.setPlaceholderText("z.B. 2")
         self.decimalPlacesInput.setStyleSheet(self.inputStyle)
-        self.decimalPlacesInput.setMaximumWidth(100)
-        self.formLayout.addRow(self.create_centered_row(self.decimalPlacesLabel, self.decimalPlacesInput))
-
+        self.formLayout.addRow(self.create_input_row(self.decimalPlacesLabel, self.decimalPlacesInput))
 
         # Prices
         self.pricesIsLabel = QLabel("Preise in:", self)
+        self.pricesIsLabel.setStyleSheet("font-weight: bold;")
         self.pricesIsSelect = QComboBox(self)
         self.pricesIsSelect.addItems(["Brutto", "Netto"])
         self.pricesIsSelect.setStyleSheet(self.inputStyle)
-        self.formLayout.addRow(self.create_centered_row(self.pricesIsLabel, self.pricesIsSelect))
+        self.formLayout.addRow(self.create_input_row(self.pricesIsLabel, self.pricesIsSelect))
 
-        # VAT
+        # VAT (MwSt)
         self.vatLabel = QLabel("Mehrwertsteuer (MwSt):", self)
-        self.vatLayout = QtWidgets.QHBoxLayout()
-        self.vatRadioGroup = QButtonGroup(self)
-        self.vat0 = QRadioButton("0 %")
-        self.vat10 = QRadioButton("10 %")
-        self.vat20 = QRadioButton("20 %")
-        self.vatRadioGroup.addButton(self.vat0, 0)
-        self.vatRadioGroup.addButton(self.vat10, 10)
-        self.vatRadioGroup.addButton(self.vat20, 20)
-        self.vat10.setChecked(True)
-        self.vat0.setStyleSheet(self.radioStyle)
-        self.vat10.setStyleSheet(self.radioStyle)
-        self.vat20.setStyleSheet(self.radioStyle)
-        self.vatLayout.addWidget(self.vat0)
-        self.vatLayout.addWidget(self.vat10)
-        self.vatLayout.addWidget(self.vat20)
-        vatContainer = QWidget(self)
-        vatContainer.setLayout(self.vatLayout)
-        self.formLayout.addRow(self.create_centered_row(self.vatLabel, vatContainer))
+        self.vatLabel.setStyleSheet("font-weight: bold;")
+        self.vatInput = QLineEdit(self)
+        self.vatInput.setStyleSheet(self.inputStyle)
+        self.formLayout.addRow(self.create_input_row(self.vatLabel, self.vatInput))
 
-        # Save button
+        # Add form layout to main layout
+        self.layout.addLayout(self.formLayout)
+
+        # **Spacer to push button to the bottom**
+        self.layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+        # Save button (centered, normal size)
+        self.buttonLayout = QHBoxLayout()
+        self.buttonLayout.setAlignment(Qt.AlignCenter)
+
         self.saveButton = QPushButton("Speichern", self)
-        self.saveButton.setMinimumHeight(40)
+        self.saveButton.setFixedSize(120, 45)  # Standard button size
         self.saveButton.setStyleSheet("""
-            QPushButton {
-                background-color: #007BFF;
-                color: white;
-                font-size: 16px;
-                border-radius: 5px;
-                padding: 10px 20px;
-            }
-            QPushButton:hover {
-                background-color: #0056b3;
-            }
-            QPushButton:pressed {
-                background-color: #004085;
-            }
+            background-color: black;
+            color: white;
+            border-radius: 5px;
+            font-size: 14px;                   
         """)
-        self.layout.addWidget(self.saveButton, alignment=QtCore.Qt.AlignCenter)
-
-        # Connect signals
         self.saveButton.clicked.connect(self.save_settings)
 
-    def create_centered_row(self, label, input_widget):
-        """Helper to create a row with label and input closely aligned."""
-        rowLayout = QtWidgets.QGridLayout()
-        rowLayout.setAlignment(QtCore.Qt.AlignCenter)
-        rowLayout.addWidget(label, 0, 0, alignment=QtCore.Qt.AlignRight)
-        rowLayout.addWidget(input_widget, 0, 1, alignment=QtCore.Qt.AlignLeft)
-        container = QWidget(self)
-        container.setLayout(rowLayout)
-        return container
+        self.buttonLayout.addWidget(self.saveButton)
+        self.layout.addLayout(self.buttonLayout)
+
+    def create_input_row(self, label, input_widget):
+        """Creates a row with bold label and input field of equal width."""
+        row = QHBoxLayout()
+        label.setFixedWidth(250)  # Aligns with NummernvergabePage label width
+        row.addWidget(label)
+        row.addWidget(input_widget)
+        return row
 
     def load_settings(self):
         """Load settings from the database and populate the UI."""
@@ -135,24 +107,26 @@ class StandardPage(QWidget):
             self.currencySelect.setCurrentText(settings.currency)
             self.decimalPlacesInput.setText(str(settings.decimal_places))
             self.pricesIsSelect.setCurrentText(settings.prices_is)
-            for button in self.vatRadioGroup.buttons():
-                if self.vatRadioGroup.id(button) == settings.VAT:
-                    button.setChecked(True)
-                    break
+            self.vatInput.setText(str(settings.VAT))
 
     def save_settings(self):
         """Save or update the settings in the database."""
-        # Validate input
         decimal_places = self.decimalPlacesInput.text()
+        vat = self.vatInput.text()
+
         if not decimal_places.isdigit():
             QMessageBox.warning(self, "Eingabefehler", "Dezimalstellen müssen eine Zahl sein.")
+            return
+
+        if not vat.replace('.', '', 1).isdigit():
+            QMessageBox.warning(self, "Eingabefehler", "MwSt muss eine Zahl sein.")
             return
 
         # Get values from UI
         currency = self.currencySelect.currentText()
         decimal_places = int(decimal_places)
         prices_is = self.pricesIsSelect.currentText()
-        vat = self.vatRadioGroup.checkedId()
+        vat = float(vat)
 
         # Save to database
         settings = session.query(billSettings).first()

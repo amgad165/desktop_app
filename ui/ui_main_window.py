@@ -20,30 +20,42 @@ class Ui_MainWindow(object):
         self.sidebar.setObjectName("sidebar")
         self.sidebar.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.sidebar.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.sidebar.setFixedWidth(150)  # Set a fixed width for the sidebar
+        self.sidebar.setFixedWidth(200)  # Increased width to allow spacing
 
         # Vertical layout for sidebar content
         self.verticalLayout = QtWidgets.QVBoxLayout(self.sidebar)
-        self.verticalLayout.setSpacing(0)
-        self.verticalLayout.setContentsMargins(0, 0, 0, 0)  # No margins
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.verticalLayout.addSpacing(4)
-        # Container widget for home icon and label
+        self.verticalLayout.setSpacing(10)  # Adjust spacing between items
+        self.verticalLayout.setContentsMargins(15, 5, 15, 0)  # Add left, right, top & bottom margins
+
+        # === "MW" TEXT AT THE TOP ===
+        self.mwLabel = QtWidgets.QLabel("MW")
+        self.mwLabel.setAlignment(QtCore.Qt.AlignCenter)  # Center the text
+        self.mwLabel.setObjectName("mwLabel")
+        font = QtGui.QFont()
+        font.setPointSize(14)  # Set font size
+        font.setBold(True)  # Make text bold
+        self.mwLabel.setFont(font)
+
+        # Add "MW" label with spacing above and below
+        self.verticalLayout.addSpacing(1)  # Space above "MW"
+        self.verticalLayout.addWidget(self.mwLabel)
+        self.verticalLayout.addSpacing(1)  # Space below "MW"
+
+        # Container widget for home icon and label (fixed size)
         self.homeContainer = QtWidgets.QWidget(self.sidebar)
         self.homeContainer.setObjectName("sideContainer")
-        
+
         # Horizontal layout for home icon and label
         self.homeLayout = QtWidgets.QHBoxLayout(self.homeContainer)
-        self.homeLayout.setContentsMargins(10, 0, 0, 0)
-        self.homeLayout.setSpacing(1)  # Adjust spacing to bring icon and label closer
-        self.homeLayout.setObjectName("homeLayout")
-        self.homeLayout.setAlignment(QtCore.Qt.AlignCenter)  # Center the content
+        self.homeLayout.setContentsMargins(10, 0, 0, 0)  # No extra margins inside the container
+        self.homeLayout.setSpacing(1)  # Adjust spacing between icon and label
+        self.homeLayout.setAlignment(QtCore.Qt.AlignCenter)
 
         # Home Icon button
         self.homeIconButton = QtWidgets.QPushButton(self.homeContainer)
-        self.homeIconButton.setFixedSize(20, 20)  # Set the size of the icon button
+        self.homeIconButton.setFixedSize(25, 25)  # Set the size of the icon button
         self.homeIconButton.setObjectName("sideIconButton")
-        icon_home = QtGui.QIcon("resources/icons/home.png")  # Set the path to your icon file
+        icon_home = QtGui.QIcon("resources/icons/home_3.png")  # Set the path to your icon file
         self.homeIconButton.setIcon(icon_home)
         self.homeIconButton.setIconSize(self.homeIconButton.size())  # Use button's size as icon size
         self.homeLayout.addWidget(self.homeIconButton)
@@ -54,6 +66,9 @@ class Ui_MainWindow(object):
         self.homeLabel.setFixedHeight(50)  # Set a fixed height
         self.homeLabel.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         self.homeLayout.addWidget(self.homeLabel)
+
+        # Add the layout to the container
+        self.homeContainer.setLayout(self.homeLayout)
 
         # Add home container to the sidebar
         self.verticalLayout.addWidget(self.homeContainer)
@@ -109,9 +124,9 @@ class Ui_MainWindow(object):
 
         # Document Icon button
         self.documentIconButton = QtWidgets.QPushButton(self.documentContainer)
-        self.documentIconButton.setFixedSize(20, 20)
+        self.documentIconButton.setFixedSize(25, 25)
         self.documentIconButton.setObjectName("sideIconButton")
-        icon_document = QtGui.QIcon("resources/icons/bill.png")  # Set the path to your document icon file
+        icon_document = QtGui.QIcon("resources/icons/description.png")  # Set the path to your document icon file
         
         self.documentIconButton.setIcon(icon_document)
         self.documentIconButton.setIconSize(self.documentIconButton.size())
@@ -126,7 +141,7 @@ class Ui_MainWindow(object):
 
         # Add a down arrow icon next to the document label
         self.arrowIconButton = QtWidgets.QPushButton(self.documentContainer)
-        self.arrowIconButton.setFixedSize(20, 20)
+        self.arrowIconButton.setFixedSize(25, 25)
         self.arrowIconButton.setObjectName("sideIconButton")
         icon_arrow_down = QtGui.QIcon("resources/icons/arrow_down.png")  # Set the path to your arrow icon
         self.arrowIconButton.setIcon(icon_arrow_down)
@@ -146,8 +161,8 @@ class Ui_MainWindow(object):
         self.item1Container = QtWidgets.QWidget(self.documentItemsContainer)
         self.item1Layout = QtWidgets.QHBoxLayout(self.item1Container)
         self.item1Icon = QtWidgets.QPushButton(self.item1Container)
-        self.item1Icon.setFixedSize(20, 20)
-        icon_item1 = QtGui.QIcon("resources/icons/offer.png")  # Set the path to your item 1 icon
+        self.item1Icon.setFixedSize(25, 25)
+        icon_item1 = QtGui.QIcon("resources/icons/sell.png")  # Set the path to your item 1 icon
         self.item1Icon.setObjectName("sideIconButton")
         self.item1Icon.setIcon(icon_item1)
         self.item1Icon.setIconSize(self.item1Icon.size())
@@ -166,8 +181,8 @@ class Ui_MainWindow(object):
         self.item2Container = QtWidgets.QWidget(self.documentItemsContainer)
         self.item2Layout = QtWidgets.QHBoxLayout(self.item2Container)
         self.item2Icon = QtWidgets.QPushButton(self.item2Container)
-        self.item2Icon.setFixedSize(20, 20)
-        icon_item2 = QtGui.QIcon("resources/icons/offer.png")  # Set the path to your item 2 icon
+        self.item2Icon.setFixedSize(25, 25)
+        icon_item2 = QtGui.QIcon("resources/icons/sell.png")  # Set the path to your item 2 icon
         self.item2Icon.setIcon(icon_item2)
         self.item2Icon.setIconSize(self.item2Icon.size())
         self.item2Icon.setObjectName("sideIconButton")
@@ -187,8 +202,8 @@ class Ui_MainWindow(object):
         self.item3Container = QtWidgets.QWidget(self.documentItemsContainer)
         self.item3Layout = QtWidgets.QHBoxLayout(self.item3Container)
         self.item3Icon = QtWidgets.QPushButton(self.item3Container)
-        self.item3Icon.setFixedSize(20, 20)
-        icon_item3 = QtGui.QIcon("resources/icons/offer.png")  # Set the path to your item 3 icon
+        self.item3Icon.setFixedSize(25, 25)
+        icon_item3 = QtGui.QIcon("resources/icons/sell.png")  # Set the path to your item 3 icon
         self.item3Icon.setIcon(icon_item3)
         self.item3Icon.setIconSize(self.item3Icon.size())
 
@@ -220,9 +235,9 @@ class Ui_MainWindow(object):
 
         # Customers Icon button
         self.customersIconButton = QtWidgets.QPushButton(self.customersContainer)
-        self.customersIconButton.setFixedSize(20, 20)  # Set the size of the icon button
+        self.customersIconButton.setFixedSize(25, 25)  # Set the size of the icon button
         self.customersIconButton.setObjectName("sideIconButton")
-        icon_customers = QtGui.QIcon("resources/icons/user.png")  # Set the path to your icon file
+        icon_customers = QtGui.QIcon("resources/icons/person.png")  # Set the path to your icon file
         self.customersIconButton.setIcon(icon_customers)
         self.customersIconButton.setIconSize(self.customersIconButton.size())  # Use button's size as icon size
 
@@ -256,9 +271,9 @@ class Ui_MainWindow(object):
 
         # Customers Icon button
         self.workersIconButton = QtWidgets.QPushButton(self.workersContainer)
-        self.workersIconButton.setFixedSize(20, 20)  # Set the size of the icon button
+        self.workersIconButton.setFixedSize(25, 25) # Set the size of the icon button
         self.workersIconButton.setObjectName("sideIconButton")
-        icon_workers = QtGui.QIcon("resources/icons/work.png")  # Set the path to your icon file
+        icon_workers = QtGui.QIcon("resources/icons/metrabeiter.png")  # Set the path to your icon file
         self.workersIconButton.setIcon(icon_workers)
         self.workersIconButton.setIconSize(self.workersIconButton.size())  # Use button's size as icon size
 
@@ -294,9 +309,9 @@ class Ui_MainWindow(object):
 
         # Products Icon button
         self.productsIconButton = QtWidgets.QPushButton(self.productsContainer)
-        self.productsIconButton.setFixedSize(20, 20)  # Set the size of the icon button
+        self.productsIconButton.setFixedSize(25, 25)  # Set the size of the icon button
         self.productsIconButton.setObjectName("sideIconButton")
-        icon_products = QtGui.QIcon("resources/icons/products.png")  # Set the path to your icon file
+        icon_products = QtGui.QIcon("resources/icons/produkte2.png")  # Set the path to your icon file
         self.productsIconButton.setIcon(icon_products)
         self.productsIconButton.setIconSize(self.productsIconButton.size())  # Use button's size as icon size
 
@@ -330,9 +345,9 @@ class Ui_MainWindow(object):
 
         # Casher Icon button
         self.casherIconButton = QtWidgets.QPushButton(self.casherContainer)
-        self.casherIconButton.setFixedSize(20, 20)  # Set the size of the icon button
+        self.casherIconButton.setFixedSize(25, 25)  # Set the size of the icon button
         self.casherIconButton.setObjectName("sideIconButton")
-        icon_casher = QtGui.QIcon("resources/icons/money.png")  # Set the path to your icon file
+        icon_casher = QtGui.QIcon("resources/icons/Kasse.png")  # Set the path to your icon file
         self.casherIconButton.setIcon(icon_casher)
         self.casherIconButton.setIconSize(self.casherIconButton.size())  # Use button's size as icon size
 
@@ -365,9 +380,9 @@ class Ui_MainWindow(object):
 
         # documents Icon button
         self.ordersIconButton = QtWidgets.QPushButton(self.ordersContainer)
-        self.ordersIconButton.setFixedSize(20, 20)  # Set the size of the icon button
+        self.ordersIconButton.setFixedSize(25, 25)  # Set the size of the icon button
         self.ordersIconButton.setObjectName("sideIconButton")
-        icon_orders = QtGui.QIcon("resources/icons/document.png")  # Set the path to your icon file
+        icon_orders = QtGui.QIcon("resources/icons/receipt.png")  # Set the path to your icon file
         self.ordersIconButton.setIcon(icon_orders)
         self.ordersIconButton.setIconSize(self.ordersIconButton.size())  # Use button's size as icon size
 
@@ -404,9 +419,9 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "Main Window"))
         self.homeLabel.setText(_translate("MainWindow", "Home"))
         # self.createBillLabel.setText(_translate("MainWindow", "Create Bill"))
-        self.documentLabel.setText(_translate("MainWindow", "Documents"))
-        self.customersLabel.setText(_translate("MainWindow", "Customers"))
-        self.workersLabel.setText(_translate("MainWindow", "Workers"))
-        self.productsLabel.setText(_translate("MainWindow", "Products"))
+        self.documentLabel.setText(_translate("MainWindow", "Dokumente"))
+        self.customersLabel.setText(_translate("MainWindow", "Kunden"))
+        self.workersLabel.setText(_translate("MainWindow", "Mitarbeiter"))
+        self.productsLabel.setText(_translate("MainWindow", "Produkte"))
         self.casherLabel.setText(_translate("MainWindow", "kasse"))
-        self.ordersLabel.setText(_translate("MainWindow", "Orders"))
+        self.ordersLabel.setText(_translate("MainWindow", "Bestellungen"))

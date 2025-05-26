@@ -2,10 +2,108 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from app.models.app_models import Product, session
 
 
+class CartItemWidget(QtWidgets.QWidget):
+    def __init__(self, product, quantity, onRemove, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet("""
+            CartItemWidget {
+                background-color: white;
+                border-radius: 8px;
+                margin: 4px;
+                border-bottom: 1px solid #e0e0e0;
+            }
+        """)
+        
+        # Main layout with proper spacing
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(10)
+        
+        # Left side: Product info container
+        infoContainer = QtWidgets.QWidget()
+        infoLayout = QtWidgets.QVBoxLayout(infoContainer)
+        infoLayout.setContentsMargins(0, 0, 0, 0)
+        infoLayout.setSpacing(2)
+        
+        # Product name with quantity
+        nameLabel = QtWidgets.QLabel(f"{quantity}x {product.produkt}")
+        nameLabel.setFont(QtGui.QFont("Poppins", 11, QtGui.QFont.Bold))
+        nameLabel.setWordWrap(True)
+        infoLayout.addWidget(nameLabel)
+        
+        layout.addWidget(infoContainer, 1)
+        
+        # Right side: Price container
+        priceContainer = QtWidgets.QWidget()
+        priceLayout = QtWidgets.QVBoxLayout(priceContainer)
+        priceLayout.setContentsMargins(0, 0, 0, 0)
+        priceLayout.setSpacing(2)
+        priceLayout.setAlignment(QtCore.Qt.AlignRight)
+        
+        # Unit price
+        unitPriceLabel = QtWidgets.QLabel(f"{product.verkaufspreis:.2f} €")
+        unitPriceLabel.setAlignment(QtCore.Qt.AlignRight)
+        unitPriceLabel.setFont(QtGui.QFont("Poppins", 10))
+        priceLayout.addWidget(unitPriceLabel)
+        
+        # Total price
+        totalPrice = product.verkaufspreis * quantity
+        totalPriceLabel = QtWidgets.QLabel(f"Summe: {totalPrice:.2f} €")
+        totalPriceLabel.setAlignment(QtCore.Qt.AlignRight)
+        totalPriceLabel.setStyleSheet("color: #666;")
+        totalPriceLabel.setFont(QtGui.QFont("Poppins", 9))
+        priceLayout.addWidget(totalPriceLabel)
+        
+        layout.addWidget(priceContainer)
+        
+        # Add spacing before remove button
+        layout.addSpacing(15)
+        
+        # Modern remove button
+        removeButton = QtWidgets.QPushButton("✕")
+        removeButton.setFixedSize(40, 40)
+        removeButton.setCursor(QtCore.Qt.PointingHandCursor)  # Change cursor on hover
+        removeButton.setStyleSheet("""
+            QPushButton {
+                background-color: #FF4C4C;
+                border-radius: 20px;
+                color: white;
+                font-size: 20px;
+                font-weight: bold;
+                border: none;
+                padding: 0;
+                margin: 0;
+                text-align: center;
+                line-height: 40px;
+                box-shadow: 0 2px 4px rgba(255, 76, 76, 0.3);
+            }
+            QPushButton:hover {
+                background-color: #ff6666;
+                box-shadow: 0 4px 8px rgba(255, 76, 76, 0.4);
+            }
+            QPushButton:pressed {
+                background-color: #ff3333;
+                box-shadow: 0 1px 2px rgba(255, 76, 76, 0.3);
+            }
+        """)
+        removeButton.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed,
+            QtWidgets.QSizePolicy.Fixed
+        )
+        removeButton.clicked.connect(onRemove)
+        layout.addWidget(removeButton)
+        
+        # Set size policies for responsive behavior
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Preferred
+        )
+
+
 class CasherPage(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.cartItems = {}  # Store cart items as Product instances and quantities
+        self.cartItems = {}  # Store as {product: (quantity, card, quantityInput)}
         self.initUI()
 
 
@@ -19,29 +117,114 @@ class CasherPage(QtWidgets.QWidget):
         self.leftContainer = QtWidgets.QWidget()  # Container for the left layout
         self.leftLayout = QtWidgets.QVBoxLayout(self.leftContainer)
         self.leftContainer.setStyleSheet("background-color: #f6f6f6;")
-        self.leftLayout.setContentsMargins(0, 0, 0, 0)  # Remove margins for compact layout
+        self.leftLayout.setContentsMargins(20, 20, 20, 20)  # Add padding around the content
 
-        # Centered Search bar layout with different color
-        self.searchContainer = QtWidgets.QWidget(self)
+        # Search container with modern design
+        self.searchContainer = QtWidgets.QWidget()
+        self.searchContainer.setFixedHeight(60)
+        self.searchContainer.setStyleSheet("""
+            QWidget {
+                background-color: #e0e0e0;
+                border-radius: 20px;
+            }
+        """)
         self.searchContainerLayout = QtWidgets.QHBoxLayout(self.searchContainer)
-        self.searchContainer.setStyleSheet("background-color: #282c3c; padding: 5px; border-radius: 1px;")
+        self.searchContainerLayout.setContentsMargins(12, 6, 12, 6)  # Reduced vertical padding
+        self.searchContainerLayout.setSpacing(8)
 
-
-
-        self.searchBar = QtWidgets.QLineEdit(self)
-        self.searchBar.setPlaceholderText("Search products...")
-        self.searchBar.setFixedWidth(300)  # Set a fixed width to avoid stretching too much
-        self.searchBar.textChanged.connect(self.filterProducts)
-        self.searchBar.setStyleSheet("background-color: #F5F5F5; border-radius: 10px; padding-left: 30px;")  # Add padding for icon
-
-        # Add the search icon and search bar to the search container
-        self.searchContainerLayout.addWidget(self.searchBar)
+        # Search icon with proper loading and display
+        searchIconLabel = QtWidgets.QLabel()
+        searchIconLabel.setFixedSize(28, 28)
+        searchIconLabel.setAlignment(QtCore.Qt.AlignCenter)
         
-        self.productCountLabel = QtWidgets.QLabel("Total Products: 0", self)
+        # First try relative path
+        iconPath = "resources/icons/search_blue.png"
+        pixmap = QtGui.QPixmap(iconPath)
+        
+        # If relative path fails, try absolute path
+        if pixmap.isNull():
+            import os
+            absolute_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), iconPath)
+            print(f"Versuche absoluten Pfad: {absolute_path}")
+            pixmap = QtGui.QPixmap(absolute_path)
 
+        if pixmap.isNull():
+            print(f"❌ Icon konnte nicht geladen werden: {iconPath}")
+            searchIconLabel.setText("🔍")  # Fallback: Unicode search icon
+            searchIconLabel.setStyleSheet("""
+                QLabel {
+                    color: #666;
+                    font-size: 16px;
+                    background: transparent;
+                }
+            """)
+        else:
+            print(f"✅ Icon geladen: {pixmap.width()}x{pixmap.height()} Pixel")
+            # Create a new pixmap with transparent background
+            scaledPixmap = QtGui.QPixmap(22, 22)
+            scaledPixmap.fill(QtCore.Qt.transparent)
+            
+            # Create painter for high-quality scaling
+            painter = QtGui.QPainter(scaledPixmap)
+            painter.setRenderHint(QtGui.QPainter.Antialiasing)
+            painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+            
+            # Draw the scaled image
+            painter.drawPixmap(
+                0, 0, 22, 22,
+                pixmap.scaled(22, 22, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+            )
+            painter.end()
+            
+            # Set the final pixmap
+            searchIconLabel.setPixmap(scaledPixmap)
+            print(f"✅ Icon skaliert auf: {scaledPixmap.width()}x{scaledPixmap.height()} Pixel")
 
+        # Ensure transparent background
+        searchIconLabel.setStyleSheet("""
+            QLabel {
+                background: transparent;
+                padding: 0px;
+                margin: 0px;
+            }
+        """)
+        
+        self.searchContainerLayout.addWidget(searchIconLabel)
+
+        # Add spacing after icon
+        self.searchContainerLayout.addSpacing(8)
+
+        # Modern search bar with adjusted styling
+        self.searchBar = QtWidgets.QLineEdit()
+        self.searchBar.setPlaceholderText("Search products...")
+        self.searchBar.textChanged.connect(self.filterProducts)
+        self.searchBar.setStyleSheet("""
+            QLineEdit {
+                background-color: white;
+                border: none;
+                border-radius: 12px;
+                padding: 8px 12px;
+                font-size: 14px;
+                color: #333;
+            }
+            QLineEdit:focus {
+                outline: none;
+            }
+        """)
+        self.searchBar.setMinimumWidth(400)
+        self.searchContainerLayout.addWidget(self.searchBar, 1)  # Add stretch factor
+
+        # Product count label with adjusted styling
+        self.productCountLabel = QtWidgets.QLabel("Gesamtprodukte: 0")
+        self.productCountLabel.setStyleSheet("""
+            QLabel {
+                color: #333;
+                font-size: 14px;
+                font-weight: bold;
+                background: transparent;
+            }
+        """)
         self.searchContainerLayout.addWidget(self.productCountLabel)
-        self.searchContainerLayout.setAlignment(QtCore.Qt.AlignCenter)  # Align the search container to center
 
         # Products container (scroll area for displaying products)
         self.productsScroll = QtWidgets.QScrollArea(self)
@@ -50,27 +233,67 @@ class CasherPage(QtWidgets.QWidget):
         self.productsLayout.setSpacing(20)  # Increase vertical space between cards
         self.productsScroll.setWidget(self.productsContainer)
         self.productsScroll.setWidgetResizable(True)
-        self.productsScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)  # Hide the vertical scrollbar
-        self.productsScroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)  # Hide horizontal scrollbar
+        self.productsScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.productsScroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.productsScroll.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background: transparent;
+            }
+            QWidget#scrollAreaWidgetContents {
+                background: transparent;
+            }
+        """)
 
         # Add to left layout
-        self.leftLayout.addWidget(self.searchContainer)  # Add the centered search bar
+        self.leftLayout.addWidget(self.searchContainer)
         self.leftLayout.addWidget(self.productsScroll)
 
         # Right side: Cart and sum total
-        self.cartContainer = QtWidgets.QWidget()  # Container for the cart layout
+        self.cartContainer = QtWidgets.QWidget()
         self.cartLayout = QtWidgets.QVBoxLayout(self.cartContainer)
-        self.cartContainer.setStyleSheet("background-color: #282c3c; border-radius: 1px;")
+        self.cartContainer.setStyleSheet("""
+            QWidget {
+                background-color: #f5f5f5;
+                border-radius: 12px;
+            }
+        """)
+        self.cartLayout.setContentsMargins(16, 16, 16, 16)
+        self.cartLayout.setSpacing(12)
 
-        self.cartLabel = QtWidgets.QLabel("Cart:", self)
-        self.cartLabel.setStyleSheet("color: white; font-weight: bold; font-size: 16px;")
-        self.cartList = QtWidgets.QListWidget(self)
-        self.cartList.setStyleSheet("background-color: #282c3c; color: white;")  # Style for cart list
-
+        # Cart header
+        self.cartLabel = QtWidgets.QLabel("Warenkorb", self)
+        self.cartLabel.setStyleSheet("color: #333; font-weight: bold; font-size: 18px; background: transparent;")
         self.cartLayout.addWidget(self.cartLabel)
-        self.cartLayout.addWidget(self.cartList)
 
-        # Add payment button and total information
+        # Cart items scroll area
+        self.cartScrollArea = QtWidgets.QScrollArea()
+        self.cartScrollArea.setWidgetResizable(True)
+        self.cartScrollArea.setStyleSheet("""
+            QScrollArea {
+                background-color: transparent;
+                border: none;
+            }
+            QScrollBar:vertical {
+                background: #f0f0f0;
+                width: 8px;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:vertical {
+                background: #c0c0c0;
+                border-radius: 4px;
+            }
+        """)
+
+        self.cartItemsWidget = QtWidgets.QWidget()
+        self.cartListLayout = QtWidgets.QVBoxLayout(self.cartItemsWidget)
+        self.cartListLayout.setSpacing(8)
+        self.cartListLayout.setAlignment(QtCore.Qt.AlignTop)
+        self.cartScrollArea.setWidget(self.cartItemsWidget)
+        
+        self.cartLayout.addWidget(self.cartScrollArea)
+
+        # Totals section
         self.addTotalInfo()
 
         # Add left and right layouts to main layout with stretch factors
@@ -80,27 +303,93 @@ class CasherPage(QtWidgets.QWidget):
         self.loadProducts()
 
     def addTotalInfo(self):
-        # Total information and pay button
-        self.subTotalLabel = QtWidgets.QLabel("Subtotal: $0.00", self)
-        self.subTotalLabel.setStyleSheet("color: white;")
-        self.taxLabel = QtWidgets.QLabel("Tax: $0.00", self)
-        self.taxLabel.setStyleSheet("color: white;")
-        self.totalLabel = QtWidgets.QLabel("Total: $0.00", self)
-        self.totalLabel.setStyleSheet("color: white;")
-
-        self.cartLayout.addWidget(self.subTotalLabel)
-        self.cartLayout.addWidget(self.taxLabel)
-        self.cartLayout.addWidget(self.totalLabel)
-
-        self.payButton = QtWidgets.QPushButton("Bezahlen", self)
-        self.payButton.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold;")
+        # Totals container
+        totalsWidget = QtWidgets.QWidget()
+        totalsLayout = QtWidgets.QVBoxLayout(totalsWidget)
+        totalsLayout.setSpacing(8)
+        
+        # Total labels with German formatting
+        self.subTotalLabel = QtWidgets.QLabel("Netto: 0,00 €")
+        self.taxLabel = QtWidgets.QLabel("10% MwSt: 0,00 €")
+        self.totalLabel = QtWidgets.QLabel("Summe: 0,00 €")
+        
+        for label in [self.subTotalLabel, self.taxLabel, self.totalLabel]:
+            label.setFont(QtGui.QFont("Poppins", 11, QtGui.QFont.Bold))
+            label.setStyleSheet("color: #333; background: transparent;")
+            totalsLayout.addWidget(label)
+        
+        self.cartLayout.addWidget(totalsWidget)
+        
+        # Action buttons
+        self.discountButton = QtWidgets.QPushButton("Rabatt in %")
+        self.discountButton.setStyleSheet("""
+            QPushButton {
+                background-color: #ff9800;
+                color: white;
+                border-radius: 8px;
+                padding: 12px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #f57c00;
+            }
+        """)
+        
+        self.payButton = QtWidgets.QPushButton("Bezahlen")
+        self.payButton.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border-radius: 8px;
+                padding: 12px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #388E3C;
+            }
+        """)
+        
+        self.cartLayout.addWidget(self.discountButton)
         self.cartLayout.addWidget(self.payButton)
+        
+        # Action icons
+        iconContainer = QtWidgets.QWidget()
+        iconLayout = QtWidgets.QHBoxLayout(iconContainer)
+        iconLayout.setAlignment(QtCore.Qt.AlignCenter)
+        
+        iconButtons = [
+            ("pdf.png", "Rechnung"),
+            ("email.png", "E-Mail"),
+            ("print.png", "Drucken")
+        ]
+        
+        for icon, tooltip in iconButtons:
+            btn = QtWidgets.QPushButton()
+            btn.setIcon(QtGui.QIcon(f"resources/icons/{icon}"))
+            btn.setIconSize(QtCore.QSize(24, 24))
+            btn.setFixedSize(40, 40)
+            btn.setToolTip(tooltip)
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: white;
+                    border-radius: 20px;
+                    padding: 8px;
+                }
+                QPushButton:hover {
+                    background-color: #f0f0f0;
+                }
+            """)
+            iconLayout.addWidget(btn)
+        
+        self.cartLayout.addWidget(iconContainer)
 
     def loadProducts(self):
         # Load products from the database and display them
         products = session.query(Product).all()
         self.displayProducts(products)
-        self.productCountLabel.setText(f"Total Products: {len(products)}")
+        self.productCountLabel.setText(f"Gesamtprodukte: {len(products)}")
 
     def displayProducts(self, products):
         # Clear current products
@@ -115,54 +404,135 @@ class CasherPage(QtWidgets.QWidget):
             self.productsLayout.addWidget(productCard, i // 3, i % 3)
 
     def createProductCard(self, product):
-        # Create a card for each product with fixed size
-        card = QtWidgets.QFrame(self)
-        card.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        card.setStyleSheet("background-color: #282c3c; padding: 1px;")
-        card.setFixedSize(350, 150)  # Set fixed size for all product cards
+        # Card container
+        card = QtWidgets.QFrame()
+        card.setFixedSize(350, 150)
+        card.setStyleSheet("""
+            QFrame {
+                background-color: #8ba1c2;
+                border-radius: 24px;
+                border: none;
+            }
+        """)
 
-        card.setObjectName("productCard")
-        cardLayout = QtWidgets.QHBoxLayout(card)  # Change to horizontal layout
+        # Main layout
+        layout = QtWidgets.QHBoxLayout(card)
+        layout.setContentsMargins(30, 20, 30, 20)
+        layout.setSpacing(30)
 
-        # Product icon
-        productIcon = QtWidgets.QLabel(self)
-        productIcon.setPixmap(QtGui.QPixmap("resources/icons/shopping_cart_checkout.png").scaled(90, 90, QtCore.Qt.KeepAspectRatio))  # Product icon
-        productIcon.setFixedWidth(90)
-        productIcon.setFixedHeight(100)  # Set the height to fill the card
-        iconLayout = QtWidgets.QVBoxLayout()  # Use a vertical layout for the icon
-        iconLayout.addWidget(productIcon, alignment=QtCore.Qt.AlignVCenter)  # Center icon vertically
-
-        # Create a vertical layout for the product details
-        detailsLayout = QtWidgets.QVBoxLayout()
+        # Left: Icon
+        iconLabel = QtWidgets.QLabel()
+        iconLabel.setFixedSize(70, 70)
+        iconLabel.setAlignment(QtCore.Qt.AlignCenter)
+        iconLabel.setStyleSheet("background: transparent;")
         
-        # Product name and price labels
-        nameLabel = QtWidgets.QLabel(product.produkt, card)
-        nameLabel.setStyleSheet("color: white;")  # Change text color to white
-        nameLabel.setFont(QtGui.QFont("Poppins", 12, QtGui.QFont.Bold))
-        priceLabel = QtWidgets.QLabel(f"Price: ${product.verkaufspreis:.2f}", card)
-        priceLabel.setStyleSheet("color: white;")  # Change text color to white
-        priceLabel.setFont(QtGui.QFont("Poppins", 10))
+        # Load and scale icon
+        pixmap = QtGui.QPixmap("resources/icons/shopping_cart_checkout2.png")
+        if not pixmap.isNull():
+            iconLabel.setPixmap(pixmap.scaled(60, 60, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation))
+        layout.addWidget(iconLabel)
+
+        # Right: Product details
+        detailsLayout = QtWidgets.QVBoxLayout()
+        detailsLayout.setSpacing(8)
+        detailsLayout.setContentsMargins(0, 0, 0, 0)
+        detailsLayout.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Product name with proper font settings
+        nameLabel = QtWidgets.QLabel(product.produkt)
+        font = QtGui.QFont("Poppins", 14)
+        font.setBold(True)
+        nameLabel.setFont(font)
+        nameLabel.setStyleSheet("""
+            QLabel {
+                color: black;
+                background: none;
+                padding: 2px 0;
+            }
+        """)
+        nameLabel.setAlignment(QtCore.Qt.AlignCenter)
+        nameLabel.setWordWrap(True)
+        nameLabel.setMinimumHeight(40)  # Ensure enough height for two lines
+        detailsLayout.addWidget(nameLabel)
+
+        # Price
+        priceText = f"Preis: {product.verkaufspreis:.2f}€".replace(".", ",")
+        priceLabel = QtWidgets.QLabel(priceText)
+        priceLabel.setStyleSheet("""
+            QLabel {
+                color: black;
+                font-family: 'Arial';
+                font-size: 13px;
+                background: none;
+            }
+        """)
+        priceLabel.setAlignment(QtCore.Qt.AlignCenter)
+        detailsLayout.addWidget(priceLabel)
 
         # Quantity input
-        quantityInput = QtWidgets.QSpinBox(card)
+        quantityInput = QtWidgets.QSpinBox()
         quantityInput.setRange(1, 100)
         quantityInput.setValue(1)
-        quantityInput.setStyleSheet("background-color: whitesmoke;")  # Different background color for visibility
+        quantityInput.setFixedSize(90, 30)
+        quantityInput.setAlignment(QtCore.Qt.AlignCenter)
+        quantityInput.setStyleSheet("""
+            QSpinBox {
+                background-color: white;
+                color: black;
+                border: none;
+                border-radius: 10px;
+                padding: 5px;
+                font-family: 'Arial';
+                font-size: 14px;
+            }
+            QSpinBox::up-button, QSpinBox::down-button {
+                width: 0;
+                border: none;
+            }
+        """)
+        detailsLayout.addWidget(quantityInput, 0, QtCore.Qt.AlignCenter)
 
-        # Add details to the details layout
-        detailsLayout.addWidget(nameLabel)
-        detailsLayout.addWidget(priceLabel)
-        detailsLayout.addWidget(quantityInput)
+        # Add details layout directly to main layout
+        layout.addLayout(detailsLayout, 1)
 
-        # Add icon and details layouts to the main card layout
-        cardLayout.addLayout(iconLayout)  # Add the icon layout to the left
-        cardLayout.addLayout(detailsLayout)  # Add the details layout to the right
+        # Click behavior
+        def handleClick(event):
+            if event.button() == QtCore.Qt.LeftButton:
+                if product in self.cartItems:
+                    quantity, _, _ = self.cartItems[product]
+                    del self.cartItems[product]
+                    self.removeFromCart(product)
+                    card.setStyleSheet("""
+                        QFrame {
+                            background-color: #8ba1c2;
+                            border-radius: 24px;
+                            border: none;
+                        }
+                    """)
+                else:
+                    self.cartItems[product] = (quantityInput.value(), card, quantityInput)
+                    self.addCartItemWidget(product, quantityInput.value())
+                    self.updateTotals()
+                    card.setStyleSheet("""
+                        QFrame {
+                            background-color: #4CAF50;
+                            border-radius: 24px;
+                            border: none;
+                        }
+                    """)
 
-        # Add product to cart on click, passing the selected quantity
-        card.mousePressEvent = lambda event, p=product, q=quantityInput: self.addToCart(p, card, q.value())
-        # Add hover effect
-        # card.enterEvent = lambda event: card.setStyleSheet("background-color: #4CAF50; padding: 1px;")  # Change color on hover
-        # card.leaveEvent = lambda event: card.setStyleSheet("background-color: #282c3c; padding: 1px;")  # Reset color when not hovered
+        card.mousePressEvent = handleClick
+
+        # Set initial state if in cart
+        if product in self.cartItems:
+            card.setStyleSheet("""
+                QFrame {
+                    background-color: #4CAF50;
+                    border-radius: 24px;
+                    border: none;
+                }
+            """)
+
         return card
 
     def filterProducts(self):
@@ -172,35 +542,74 @@ class CasherPage(QtWidgets.QWidget):
         self.displayProducts(filteredProducts)
 
     def addToCart(self, product, card, quantity):
-        # Toggle product in cart
         if product in self.cartItems:
-            # Remove the product if it's already in the cart
+            # Remove from cart
             del self.cartItems[product]
             self.removeFromCart(product)
-            card.setStyleSheet("background-color: #282c3c;")  # Change back to original color
+            card.setStyleSheet("""
+                QFrame {
+                    background-color: #8ba1c2;
+                    border-radius: 24px;
+                    border: none;
+                }
+            """)
         else:
-            # Add the product to the cart
-            self.cartItems[product] = quantity
-            self.cartList.addItem(f"🛒 {product.produkt} (Qty: {quantity}) - ${product.verkaufspreis * quantity:.2f}")
+            # Add to cart
+            self.cartItems[product] = (quantity, card, quantityInput) # type: ignore
+            self.addCartItemWidget(product, quantity)
             self.updateTotals()
-            card.setStyleSheet("background-color: #4CAF50;")
+            card.setStyleSheet("""
+                QFrame {
+                    background-color: #4CAF50;
+                    border-radius: 24px;
+                    border: none;
+                }
+            """)
+
+    def addCartItemWidget(self, product, quantity):
+        cartItem = CartItemWidget(
+            product,
+            quantity,
+            lambda: self.removeFromCart(product)
+        )
+        self.cartListLayout.addWidget(cartItem)
 
     def removeFromCart(self, product):
         # Remove the product from the cart list
-        for index in range(self.cartList.count()):
-            if product.produkt in self.cartList.item(index).text():
-                self.cartList.takeItem(index)
-                break
+        for i in range(self.cartListLayout.count()):
+            itemWidget = self.cartListLayout.itemAt(i).widget()
+            if itemWidget:
+                nameLabel = itemWidget.findChild(QtWidgets.QLabel)
+                if nameLabel and product.produkt in nameLabel.text():
+                    itemWidget.setParent(None)
+                    break
+
+        # Reset the card color and quantity if product is in cartItems
+        if product in self.cartItems:
+            quantity, card, quantityInput = self.cartItems[product]
+            # Reset card color
+            card.setStyleSheet("""
+                QFrame {
+                    background-color: #8ba1c2;
+                    border-radius: 24px;
+                    border: none;
+                }
+            """)
+            # Reset quantity to 1
+            quantityInput.setValue(1)
+            del self.cartItems[product]
+        
         self.updateTotals()
 
     def updateTotals(self):
         # Update subtotal, tax, and total
-        subtotal = sum(product.verkaufspreis * quantity for product, quantity in self.cartItems.items())
+        subtotal = sum(product.verkaufspreis * quantity for product, (quantity, _, _) in self.cartItems.items())
         tax = subtotal * 0.1  # Example tax rate
         total = subtotal + tax
-
-        self.subTotalLabel.setText(f"Subtotal: ${subtotal:.2f}")
-        self.taxLabel.setText(f"Tax: ${tax:.2f}")
-        self.totalLabel.setText(f"Total: ${total:.2f}")
+        
+        # Format numbers with German locale (comma as decimal separator)
+        self.subTotalLabel.setText(f"Netto: {subtotal:.2f} €".replace(".", ","))
+        self.taxLabel.setText(f"10% MwSt: {tax:.2f} €".replace(".", ","))
+        self.totalLabel.setText(f"Summe: {total:.2f} €".replace(".", ","))
 
 

@@ -168,6 +168,29 @@ class billSettings(Base):
     VAT = Column(Integer, nullable=False, default=1)  # Nachste fortlaufende Nummer for Lieferschein
 
 
+class Bankverbindung(Base):
+    __tablename__ = 'bankverbindung'
+
+    id = Column(Integer, primary_key=True)
+    institut = Column(String, nullable=False)  # Bank name
+    inhaber = Column(String, nullable=False)  # Account holder
+    iban = Column(String, nullable=False)  # IBAN
+    bic = Column(String, nullable=False)  # BIC
+
+    def __repr__(self):
+        return f"<Bankverbindung(institut={self.institut}, inhaber={self.inhaber})>"
+    
+class License(Base):
+    __tablename__ = 'licenses'
+
+    id = Column(Integer, primary_key=True)
+    license_key = Column(String, nullable=False)
+    hardware_id = Column(String, nullable=False)
+    is_active = Column(Boolean, default=False)
+
+    def __repr__(self):
+        return f"<License(license_key={self.license_key}, hardware_id={self.hardware_id}, is_active={self.is_active})>"
+
 # Setup the database connection
 engine = create_engine('sqlite:///app.db')  # Or use 'postgresql://user:password@localhost/mydatabase'
 Base.metadata.create_all(engine)

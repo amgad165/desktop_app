@@ -7,9 +7,16 @@ from fpdf import FPDF
 from PIL import Image
 from io import BytesIO
 from shutil import copyfile
-import pyodbc
-from app.models.app_models import CompanyDetails, Nummernvergabe, session, Product, Customer,Document, billSettings,engine  # Ensure Customer is imported
+from app.models.app_models import Bankverbindung, CompanyDetails, Nummernvergabe, session, Product, Customer,Document, billSettings,engine  # Ensure Customer is imported
 from sqlalchemy.orm import sessionmaker
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
+from PyQt5.QtGui import QPagedPaintDevice
+from PyQt5.QtCore import QUrl
+import subprocess
+import os
+import platform
+from datetime import datetime
+from urllib.parse import quote
 
 class CreateBillController:
     def __init__(self, stacked_widget):
@@ -82,6 +89,7 @@ class CreateBillController:
 
         self.reset_page()
         self.reset_pdf_viewer()
+        self.page_type = page_type  # Store page_type as an instance variable
 
 
         nummernvergabe = session.query(Nummernvergabe).first()
@@ -119,25 +127,37 @@ class CreateBillController:
 
         self.connections_setup = True  # Set the flag to True after setting up connections
 
-        # Connect buttons
+        # Highlight allgemeinButton by default
+        self.highlight_button(self.create_bill_page_ui.allgemeinButton)
+
+        # Connect action buttons
         self.create_bill_page_ui.addEntityButton.clicked.connect(self.update_pdf_artikel)
         self.create_bill_page_ui.exportButton.clicked.connect(self.export_pdf)
+        self.create_bill_page_ui.saveOrderButton.clicked.connect(self.save_to_order)
+        self.create_bill_page_ui.printButton.clicked.connect(self.print_pdf)
 
-        # Allgemein page connections
-        self.create_bill_page_ui.allgemeinButton.clicked.connect(lambda: self.show_inputs("allgemein", self.create_bill_page_ui.allgemeinButton))
+        # Connect section buttons
+        self.create_bill_page_ui.allgemeinButton.clicked.connect(
+            lambda: self.show_inputs("allgemein", self.create_bill_page_ui.allgemeinButton))
+        self.create_bill_page_ui.kundeButton.clicked.connect(
+            lambda: self.show_inputs("kunde", self.create_bill_page_ui.kundeButton))
+        self.create_bill_page_ui.artikelButton.clicked.connect(
+            lambda: self.show_inputs("artikel", self.create_bill_page_ui.artikelButton))
+
+        # Connect page-specific buttons
         self.create_bill_page_ui.addAllgemeinButton.clicked.connect(self.update_pdf_allgemein)
-
-        # Kunde page connections
-        self.create_bill_page_ui.kundeButton.clicked.connect(lambda: self.show_inputs("kunde", self.create_bill_page_ui.kundeButton))
         self.create_bill_page_ui.addKundeEntityButton.clicked.connect(self.update_pdf_kunde)
-        self.create_bill_page_ui.customerTable.itemClicked.connect(self.on_customer_table_item_clicked)  # Connect table item clicked
+        self.create_bill_page_ui.removeKundeLastRowButton.clicked.connect(self.clear_kunde_inputs)
 
-        # Artikel page connections
-        self.create_bill_page_ui.artikelButton.clicked.connect(lambda: self.show_inputs("artikel", self.create_bill_page_ui.artikelButton))
+        # Connect table functionality
         self.create_bill_page_ui.artikelSearchInput.textChanged.connect(self.filter_products)
+        self.create_bill_page_ui.kundeSearchInput.textChanged.connect(self.filter_customers)
         self.create_bill_page_ui.productTable.itemSelectionChanged.connect(self.update_selected_products)
+        self.create_bill_page_ui.customerTable.itemClicked.connect(self.on_customer_table_item_clicked)
+        
+        # Connect batch and row buttons
         self.create_bill_page_ui.removeLastRowButton.clicked.connect(self.handle_remove_last_row)
-        self.create_bill_page_ui.addBatchButton.clicked.connect(self.handle_add_batch)
+        self.create_bill_page_ui.batchButton.clicked.connect(self.handle_add_batch)
 
         print("Connections have been set up.")
 
@@ -148,6 +168,7 @@ class CreateBillController:
             self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.kundePage)
         elif section == "artikel":
             self.create_bill_page_ui.inputsStackedWidget.setCurrentWidget(self.create_bill_page_ui.artikelPage)
+
 
 
         # Highlight the clicked button
@@ -164,8 +185,8 @@ class CreateBillController:
         """
         highlighted_style = """
             QPushButton {
-                background-color: #007BFF;
-                color: white;
+                background-color: #6887b6;
+                color: black;
                 border: 1px solid #0056b3;
                 padding: 5px 10px;
             }
@@ -177,6 +198,8 @@ class CreateBillController:
 
         # Apply the highlighted style to the clicked button
         clicked_button.setStyleSheet(highlighted_style)
+
+
     def load_products(self):
         try:
             Session = sessionmaker(bind=engine)
@@ -355,21 +378,32 @@ class CreateBillController:
         self.generate_pdf(self.pdf_path, self.allgemein_dict, self.kunde_dict, self.selected_products)
         self.create_bill_page_ui.pdfViewer.load_pdf(self.pdf_path)
 
+    def clear_kunde_inputs(self):
+        self.create_bill_page_ui.kundeInput.clear()
+        self.create_bill_page_ui.adresseInput.clear()
+        self.create_bill_page_ui.plzInput.clear()
+        self.create_bill_page_ui.ortInput.clear()
+        self.create_bill_page_ui.telefonInput.clear()
+        self.create_bill_page_ui.Kunden_Nr.clear()
+        self.create_bill_page_ui.uidNrInput.clear()
 
-    def update_pdf_kunde(self):
+        # Clear the selected customer
+        self.current_customer_selection = []
+        self.kunde_dict = None
+        self.update_pdf_kunde(cleared=True)
 
+    def update_pdf_kunde(self,cleared=False):
 
-        # name = self.create_bill_page_ui.nameInput.text()
-        # age = self.create_bill_page_ui.ageInput.text()
-        # email = self.create_bill_page_ui.emailInput.text()
-
-        self.kunde_dict ={'kunde':self.create_bill_page_ui.kundeInput.text(),'adresse':self.create_bill_page_ui.adresseInput.text(),
-                     'plz':self.create_bill_page_ui.plzInput.text(),'ort':self.create_bill_page_ui.ortInput.text(),
-                     'land':self.create_bill_page_ui.landSelect.currentText(),
-                     'kunden_nr':self.create_bill_page_ui.Kunden_Nr.text(),
-                     'telefon':self.create_bill_page_ui.telefonInput.text(),
-                     'uid_nr':self.create_bill_page_ui.uidNrInput.text(),
-                     }
+        if cleared:
+            self.kunde_dict = None
+        else:
+            self.kunde_dict ={'kunde':self.create_bill_page_ui.kundeInput.text(),'adresse':self.create_bill_page_ui.adresseInput.text(),
+                        'plz':self.create_bill_page_ui.plzInput.text(),'ort':self.create_bill_page_ui.ortInput.text(),
+                        'land':self.create_bill_page_ui.landSelect.currentText(),
+                        'kunden_nr':self.create_bill_page_ui.Kunden_Nr.text(),
+                        'telefon':self.create_bill_page_ui.telefonInput.text(),
+                        'uid_nr':self.create_bill_page_ui.uidNrInput.text(),
+                        }
         self.pdf_path = 'bill.pdf'
 
         self.generate_pdf(self.pdf_path, self.allgemein_dict, self.kunde_dict, self.selected_products)
@@ -380,7 +414,7 @@ class CreateBillController:
 
 
         self.allgemein_dict ={'betreff':self.create_bill_page_ui.betreffInput.text(),'date':self.create_bill_page_ui.datumInput.text(),
-                     'bearbeiter':self.create_bill_page_ui.bearbeiterSelect.currentText()
+                     'bearbeiter':self.create_bill_page_ui.bearbeiterSelect.currentText(),'referenz':self.create_bill_page_ui.referenzInput.text(),
                      }
         self.pdf_path = 'bill.pdf'
 
@@ -412,9 +446,20 @@ class CreateBillController:
     def generate_pdf(self, pdf_path, allgemein_dict, kunde_dict, selected_products): 
         class PDF(FPDF):
             def footer(self):
-                self.set_y(-15)
-                self.set_font('Arial', 'I', 8)
-                self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+                self.set_y(-35)  # Move footer higher
+                self.set_line_width(0.5)
+                self.line(10, self.get_y(), 200, self.get_y())  # Horizontal line
+
+                self.ln(5)  # Space after the line
+                self.set_font('Arial', 'B', 14)
+                self.cell(0, 5, 'Bankverbindung', 0, 1, 'C')  # Centered title
+
+                bank_details = session.query(Bankverbindung).first()
+                if bank_details:
+                    self.ln(3)  # Space between title and details
+                    self.set_font('Arial', '', 12)
+                    self.cell(0, 5, f"Institut: {bank_details.institut}, Referenz: {allgemein_dict.get("referenz")} ,Inhaber: {bank_details.inhaber}", 0, 1, 'C')
+                    self.cell(0, 5, f"IBAN: {bank_details.iban}, BIC: {bank_details.bic}", 0, 1, 'C')
 
         pdf = PDF()
         pdf.add_page()
@@ -440,10 +485,10 @@ class CreateBillController:
             line_height = 6
             pdf.cell(0, line_height, f'{company_details.adresse}', ln=True, align='R')
             pdf.cell(0, line_height, f'{company_details.plz} {company_details.ort}', ln=True, align='R')
-            pdf.cell(0, line_height, company_details.land, ln=True, align='R')
+            # pdf.cell(0, line_height, company_details.land, ln=True, align='R')
             pdf.cell(0, line_height, f'{company_details.telefon}', ln=True, align='R')
             pdf.cell(0, line_height, f'{company_details.email}', ln=True, align='R')
-            pdf.cell(0, line_height, f'{company_details.steuernummer}', ln=True, align='R')
+            # pdf.cell(0, line_height, f'{company_details.steuernummer}', ln=True, align='R')
 
             pdf.set_xy(10, pdf.get_y() + 2)
             pdf.set_line_width(0.5)
@@ -455,23 +500,28 @@ class CreateBillController:
             
             # Display Kunde info on the left
             pdf.set_xy(10, pdf.get_y())  # Start from the left
+            pdf.set_font('Arial', 'B', 14)  # Bold and larger font for the title
+            pdf.cell(0, 6, 'Lieferadresse:', 0, 1, 'L')
+
+            pdf.ln(2)  # Add a space between the title and the content
+
+            pdf.set_font('Arial', '', 12)  # Regular font for the following lines
             pdf.cell(0, 6, f'{kunde_dict.get("kunde")}', 0, 1)
             pdf.cell(0, 6, f'{kunde_dict.get("adresse")}', 0, 1)
             pdf.cell(0, 6, f'{kunde_dict.get("plz")} {kunde_dict.get("ort")}', 0, 1)
             pdf.cell(0, 6, f'{kunde_dict.get("land")}', 0, 1)
 
             # Display KundenInfo (aligned to the right with background color)
-            kunden_info_x = 120  # Position on the right side
-            kunden_info_y = pdf.get_y() - 30  # Align with the top of Kunde info
+            kunden_info_x = 134  # Position on the right side
+            kunden_info_y = pdf.get_y() - 34  # Align with the top of Kunde info
 
             pdf.set_xy(kunden_info_x, kunden_info_y)
-            pdf.set_fill_color(200, 220, 255)  # Background color for the container
-            pdf.cell(80, 30, '', 0, 1, 'R', 1)  # Container with background color
+            pdf.cell(80, 30, '', 0, 1, 'R')  # Container without background color
 
             # Position title inside the container with larger font and bold
             pdf.set_xy(kunden_info_x + 5, kunden_info_y + 2)  # Add padding inside the container
             pdf.set_font('Arial', 'B', 14)  # Bold and larger font for the title
-            pdf.cell(0, 6, 'Kundeninfo', 0, 1, 'L')
+            pdf.cell(0, 6, 'Kundeninfo:', 0, 1, 'L')
 
             # Reset font to normal size and not bold for the rest of the data
             pdf.set_font('Arial', '', 12)  # Regular font for the following lines
@@ -529,46 +579,167 @@ class CreateBillController:
             pdf.cell(0, 6, 'Bearbeiter:', 0, 1, 'L')
             pdf.set_xy(right_x + 20, current_y + 6)
             pdf.cell(0, 6, f'  {allgemein_dict.get("bearbeiter")}', 0, 1, 'L')
-            
+            pdf.ln(2)  # Add a space between the title and the content
 
-        # Rest of the order details (this remains the same as your original code)
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 10, 'Order:', 0, 1)
 
-        pdf.set_fill_color(200, 220, 255)
         pdf.set_font('Arial', 'B', 12)
-        pdf.cell(40, 10, 'CodeNr', 1, 0, 'C', 1)
-        pdf.cell(40, 10, 'Menge', 1, 0, 'C', 1)
-        pdf.cell(60, 10, 'Name', 1, 0, 'C', 1)
-        pdf.cell(40, 10, 'SalesPrice', 1, 1, 'C', 1)
+
+        # Table Header (with only a bottom border)
+        pdf.cell(30, 10, 'CodeNr', 0, 0, 'C')
+        pdf.cell(60, 10, 'Produkt', 0, 0, 'C')
+        pdf.cell(30, 10, 'Menge', 0, 0, 'C')
+        pdf.cell(30, 10, 'Einzelpreis', 0, 0, 'C')
+        pdf.cell(40, 10, 'Gesamtsumme', 0, 1, 'C')
+
+        # Draw horizontal line under header
+        pdf.set_line_width(0.5)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
 
         pdf.set_font('Arial', '', 12)
-        pdf.set_fill_color(240, 240, 240)
 
+        # Initialize total values
+        subtotal = 0.0  
+
+        # Table Data (without any borders or background)
         for product in selected_products:
-            pdf.cell(40, 10, product[0], 1, 0, 'C', 1)
-            pdf.cell(40, 10, product[1], 1, 0, 'C', 1)
-            pdf.cell(60, 10, product[2], 1, 0, 'C', 1)
-            pdf.cell(40, 10, product[3], 1, 1, 'C', 1)
+            menge = float(product[1])  # Menge (Quantity)
+            einzelpreis = float(product[3])  # Einzelpreis (Unit Price)
+            gesamtsumme = menge * einzelpreis  # Gesamtsumme
 
+            # Accumulate subtotal
+            subtotal += gesamtsumme
+
+            pdf.cell(30, 10, product[0], 0, 0, 'C')  # CodeNr
+            pdf.cell(60, 10, product[2], 0, 0, 'C')  # Produkt
+            pdf.cell(30, 10, str(menge), 0, 0, 'C')  # Menge
+            pdf.cell(30, 10, f"{einzelpreis:.2f}", 0, 0, 'C')  # Einzelpreis
+            pdf.cell(40, 10, f"{gesamtsumme:.2f}", 0, 1, 'C')  # Gesamtsumme
+
+        # Draw horizontal line under the last row
+        pdf.set_line_width(0.5)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+
+        # Retrieve VAT percentage
+        settings = session.query(billSettings).first()
+        mwst = float(settings.VAT) if settings else 0.0  # Ensure a numeric value
+
+        # Calculate VAT and total
+        vat_amount = subtotal * (mwst / 100)
+        total_amount = subtotal + vat_amount
+
+        # Add totals below the table
+        pdf.ln(5)
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(150, 10, "Zwischensumme:", 0, 0, 'R')
+        pdf.cell(40, 10, f"{subtotal:.2f}", 0, 1, 'R')
+
+        pdf.cell(150, 10, f"MwSt. ({mwst}%):", 0, 0, 'R')
+        pdf.cell(40, 10, f"{vat_amount:.2f}", 0, 1, 'R')
+
+        pdf.cell(150, 10, "Gesamtbetrag:", 0, 0, 'R')
+        pdf.cell(40, 10, f"{total_amount:.2f}", 0, 1, 'R')
+
+        # Save the PDF
         pdf.output(pdf_path)
 
 
     def export_pdf(self):
+        """Export the PDF document to a user-specified location"""
+        if not hasattr(self, 'pdf_path') or not self.pdf_path or not os.path.exists(self.pdf_path):
+            QMessageBox.warning(
+                self.create_bill_page,
+                "Export Fehler",
+                "Es gibt kein PDF-Dokument zum Exportieren."
+            )
+            return False
+        
+        # Generate a default filename based on document type and current date
+        default_name = f"{self.page_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            
+        # Show save dialog
         options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(self.create_bill_page, "Save PDF", "", "PDF Files (*.pdf);;All Files (*)", options=options)
+        file_path, _ = QFileDialog.getSaveFileName(
+            self.create_bill_page, 
+            "PDF speichern", 
+            os.path.join(os.path.expanduser("~"), "Downloads", default_name),
+            "PDF Dateien (*.pdf);;Alle Dateien (*)", 
+            options=options
+        )
+        
         if file_path:
-            if not file_path.endswith('.pdf'):
-                file_path += '.pdf'
-            copyfile(self.pdf_path, file_path)
-            self.save_to_order()
+            try:
+                # Ensure file has .pdf extension
+                if not file_path.lower().endswith('.pdf'):
+                    file_path += '.pdf'
+                    
+                # Copy the PDF file
+                copyfile(self.pdf_path, file_path)
+                
+                # Save document to database
+                self.save_to_order()
 
-            QMessageBox.information(self.create_bill_page, "Export Successful", f"PDF exported successfully to {file_path}")
+                QMessageBox.information(
+                    self.create_bill_page, 
+                    "Export erfolgreich", 
+                    f"PDF wurde erfolgreich exportiert nach:\n{file_path}"
+                )
+                return True
+            except Exception as e:
+                QMessageBox.critical(
+                    self.create_bill_page, 
+                    "Export Fehler", 
+                    f"Fehler beim Exportieren der PDF: {str(e)}"
+                )
+                return False
+        return False
 
-
+    def print_pdf(self):
+        """Print the PDF document using system default PDF viewer"""
+        if not hasattr(self, 'pdf_path') or not self.pdf_path or not os.path.exists(self.pdf_path):
+            QMessageBox.warning(
+                self.create_bill_page,
+                "Drucken Fehler",
+                "Es gibt kein PDF-Dokument zum Drucken."
+            )
+            return False
+            
+        try:
+            # Get absolute path to the PDF
+            file_path = os.path.abspath(self.pdf_path)
+            
+            # Use system-specific commands
+            system = platform.system()
+            
+            if system == "Windows":
+                # Windows - use shell command to print
+                os.startfile(file_path, 'print')
+                success_message = "PDF wurde an den Drucker gesendet."
+            elif system == "Darwin":  # macOS
+                # Open with Preview on macOS
+                subprocess.run(['open', '-a', 'Preview', file_path])
+                success_message = "PDF wurde in Preview geöffnet. Bitte verwenden Sie den Drucken-Dialog."
+            else:  # Linux and other Unix systems
+                # Use xdg-open on Linux
+                subprocess.run(['xdg-open', file_path])
+                success_message = "PDF wurde mit dem Standardbetrachter geöffnet. Bitte verwenden Sie den Drucken-Dialog."
+                
+            QMessageBox.information(
+                self.create_bill_page, 
+                "Drucken", 
+                success_message
+            )
+            return True
+        except Exception as e:
+            QMessageBox.critical(
+                self.create_bill_page, 
+                "Drucken Fehler", 
+                f"Fehler beim Drucken der PDF: {str(e)}"
+            )
+            return False
 
 
     def save_to_order(self):
+        """Save the document to the database and optionally close the window"""
         # Create a session to interact with the database
         Session = sessionmaker(bind=engine)
         session = Session()
@@ -621,16 +792,23 @@ class CreateBillController:
             summe_netto=round(summe_netto, 2),
             summe_brutto=round(summe_brutto, 2),
             summe_kommentare='Kommentare',  # Replace with actual comments
-            doc_type=self.create_bill_page_ui.betreffInput.text(),
+            doc_type=self.page_type,  # Ensure this is set correctly based on the page type
         )
 
         # Add the document to the session and commit it to the database
         try:
             session.add(document)
             session.commit()
-            QMessageBox.information(self.create_bill_page, "Save Successful", "Document saved successfully.")
+            QMessageBox.information(self.create_bill_page, "Speichern erfolgreich", "Dokument wurde erfolgreich gespeichert.")
+            
+            # Return to the main page if requested
+            if hasattr(self, 'stacked_widget'):
+                self.stacked_widget.setCurrentIndex(0)
+                
+            return True
         except Exception as e:
             session.rollback()  # Rollback in case of an error
-            QMessageBox.critical(self.create_bill_page, "Save Failed", f"Failed to save the document: {str(e)}")
+            QMessageBox.critical(self.create_bill_page, "Speichern fehlgeschlagen", f"Fehler beim Speichern des Dokuments: {str(e)}")
+            return False
         finally:
             session.close()  # Close the session

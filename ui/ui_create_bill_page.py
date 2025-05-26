@@ -14,7 +14,7 @@ class Ui_CreateBillPage(object):
         
         # Left half: Inputs and buttons
         self.leftWidget = QtWidgets.QWidget(CreateBillPage)
-        self.leftWidget.setMaximumWidth(850)  # Set minimum width for the left widget
+        self.leftWidget.setMaximumWidth(820)  # Set minimum width for the left widget
 
         self.leftLayout = QtWidgets.QVBoxLayout(self.leftWidget)
         self.leftLayout.setObjectName("leftLayout")
@@ -59,7 +59,6 @@ class Ui_CreateBillPage(object):
 
         self.betreffLabel = QtWidgets.QLabel("Betreff")
         self.betreffInput = QtWidgets.QLineEdit(self.allgemeinPage)
-        self.betreffInput.setPlaceholderText("Betreff")
         self.betreffDatumLayout.addWidget(self.betreffLabel)
         self.betreffDatumLayout.addWidget(self.betreffInput)
 
@@ -77,7 +76,6 @@ class Ui_CreateBillPage(object):
         self.leistungszeitraumLayout = QtWidgets.QHBoxLayout()
         self.leistungszeitraumLabel = QtWidgets.QLabel("Leistungszeitraum")
         self.leistungszeitraumInput = QtWidgets.QLineEdit(self.allgemeinPage)
-        self.leistungszeitraumInput.setPlaceholderText("Leistungszeitraum")
         self.leistungszeitraumLayout.addWidget(self.leistungszeitraumLabel)
         self.leistungszeitraumLayout.addWidget(self.leistungszeitraumInput)
         self.allgemeinLayout.addLayout(self.leistungszeitraumLayout)
@@ -86,7 +84,6 @@ class Ui_CreateBillPage(object):
         self.referenzLayout = QtWidgets.QHBoxLayout()
         self.referenzLabel = QtWidgets.QLabel("Referenz")
         self.referenzInput = QtWidgets.QLineEdit(self.allgemeinPage)
-        self.referenzInput.setPlaceholderText("Referenz")
         self.referenzLayout.addWidget(self.referenzLabel)
         self.referenzLayout.addWidget(self.referenzInput)
         self.allgemeinLayout.addLayout(self.referenzLayout)
@@ -133,8 +130,9 @@ class Ui_CreateBillPage(object):
 
 
 
-        self.addAllgemeinButton = QtWidgets.QPushButton("Add Info", self.allgemeinPage)
+        self.addAllgemeinButton = QtWidgets.QPushButton("Hinzufügen", self.allgemeinPage)
         self.addAllgemeinButton.setObjectName("addAllgemeinButton")
+        self.addAllgemeinButton.setStyleSheet("background-color: #6887b6;")
         self.allgemeinLayout.addWidget(self.addAllgemeinButton)
         self.inputsStackedWidget.addWidget(self.allgemeinPage)
 
@@ -158,7 +156,6 @@ class Ui_CreateBillPage(object):
 
         self.uidNrLabel = QtWidgets.QLabel("UID-NR")
         self.uidNrInput = QtWidgets.QLineEdit(self.kundePage)
-        self.uidNrInput.setPlaceholderText("UID-NR")
         self.anredeUIDLayout.addWidget(self.uidNrLabel)
         self.anredeUIDLayout.addWidget(self.uidNrInput)
         
@@ -169,7 +166,6 @@ class Ui_CreateBillPage(object):
         
         self.kundeLabel = QtWidgets.QLabel("Kunde")
         self.kundeInput = QtWidgets.QLineEdit(self.kundePage)
-        self.kundeInput.setPlaceholderText("Kunde")
         self.kundeMwstLayout.addWidget(self.kundeLabel)
         self.kundeMwstLayout.addWidget(self.kundeInput)
 
@@ -195,14 +191,12 @@ class Ui_CreateBillPage(object):
         self.contactLayout = QtWidgets.QHBoxLayout()
         self.kontaktpersonLabel = QtWidgets.QLabel("Kontaktperson")
         self.kontaktpersonInput = QtWidgets.QLineEdit(self.kundePage)
-        self.kontaktpersonInput.setPlaceholderText("Kontaktperson")
 
         self.contactLayout.addWidget(self.kontaktpersonLabel)
         self.contactLayout.addWidget(self.kontaktpersonInput)
 
         self.telefonLabel = QtWidgets.QLabel("Telefon")
         self.telefonInput = QtWidgets.QLineEdit(self.kundePage)
-        self.telefonInput.setPlaceholderText("Telefon")
 
         self.contactLayout.addWidget(self.telefonLabel)
         self.contactLayout.addWidget(self.telefonInput)
@@ -214,13 +208,11 @@ class Ui_CreateBillPage(object):
 
         self.adresseLabel = QtWidgets.QLabel("Adresse")
         self.adresseInput = QtWidgets.QLineEdit(self.kundePage)
-        self.adresseInput.setPlaceholderText("Adresse")
         self.adresseLieferadresseLayout.addWidget(self.adresseLabel)
         self.adresseLieferadresseLayout.addWidget(self.adresseInput)
 
         self.lieferadresseLabel = QtWidgets.QLabel("Lieferadresse")
         self.lieferadresseInput = QtWidgets.QLineEdit(self.kundePage)
-        self.lieferadresseInput.setPlaceholderText("Lieferadresse")
         self.adresseLieferadresseLayout.addWidget(self.lieferadresseLabel)
         self.adresseLieferadresseLayout.addWidget(self.lieferadresseInput)
 
@@ -231,13 +223,11 @@ class Ui_CreateBillPage(object):
 
         self.plzLabel = QtWidgets.QLabel("PLZ")
         self.plzInput = QtWidgets.QLineEdit(self.kundePage)
-        self.plzInput.setPlaceholderText("PLZ")
         self.plzOrtLayout.addWidget(self.plzLabel)
         self.plzOrtLayout.addWidget(self.plzInput)
 
         self.ortLabel = QtWidgets.QLabel("Ort")
         self.ortInput = QtWidgets.QLineEdit(self.kundePage)
-        self.ortInput.setPlaceholderText("Ort")
         self.plzOrtLayout.addWidget(self.ortLabel)
         self.plzOrtLayout.addWidget(self.ortInput)
 
@@ -261,11 +251,88 @@ class Ui_CreateBillPage(object):
         self.kundeContainerLayout.setSpacing(10)  # Remove space between elements
         self.kundeContainerLayout.setAlignment(QtCore.Qt.AlignTop)
 
-        # Search input for Customer table
-        self.kundeSearchInput = QtWidgets.QLineEdit(self.kundeContainer)
+       # --- Styled search container for Customer ---
+        self.kundeSearchContainer = QtWidgets.QWidget(self.kundeContainer)
+        self.kundeSearchContainer.setFixedHeight(60)
+        self.kundeSearchContainer.setStyleSheet("""
+            QWidget {
+                background-color: #e0e0e0;
+                border-radius: 20px;
+            }
+        """)
+        self.kundeSearchContainerLayout = QtWidgets.QHBoxLayout(self.kundeSearchContainer)
+        self.kundeSearchContainerLayout.setContentsMargins(12, 6, 12, 6)
+        self.kundeSearchContainerLayout.setSpacing(8)
+
+        # Search icon
+        searchIconLabel = QtWidgets.QLabel()
+        searchIconLabel.setFixedSize(28, 28)
+        searchIconLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Load icon
+        iconPath = "resources/icons/search_blue.png"
+        pixmap = QtGui.QPixmap(iconPath)
+
+        if pixmap.isNull():
+            import os
+            absolute_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), iconPath)
+            pixmap = QtGui.QPixmap(absolute_path)
+
+        if pixmap.isNull():
+            searchIconLabel.setText("🔍")
+            searchIconLabel.setStyleSheet("""
+                QLabel {
+                    color: #666;
+                    font-size: 16px;
+                    background: transparent;
+                }
+            """)
+        else:
+            scaledPixmap = QtGui.QPixmap(22, 22)
+            scaledPixmap.fill(QtCore.Qt.transparent)
+            painter = QtGui.QPainter(scaledPixmap)
+            painter.setRenderHint(QtGui.QPainter.Antialiasing)
+            painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+            painter.drawPixmap(
+                0, 0, 22, 22,
+                pixmap.scaled(22, 22, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+            )
+            painter.end()
+            searchIconLabel.setPixmap(scaledPixmap)
+
+        searchIconLabel.setStyleSheet("""
+            QLabel {
+                background: transparent;
+                padding: 0px;
+                margin: 0px;
+            }
+        """)
+
+        self.kundeSearchContainerLayout.addWidget(searchIconLabel)
+        self.kundeSearchContainerLayout.addSpacing(8)
+
+        # Styled customer search input
+        self.kundeSearchInput = QtWidgets.QLineEdit()
         self.kundeSearchInput.setPlaceholderText("Search Customer Name")
         self.kundeSearchInput.setObjectName("kundeSearch")
-        self.kundeContainerLayout.addWidget(self.kundeSearchInput)
+        self.kundeSearchInput.setStyleSheet("""
+            QLineEdit {
+                background-color: white;
+                border: none;
+                border-radius: 12px;
+                padding: 8px 12px;
+                font-size: 14px;
+                color: #333;
+            }
+            QLineEdit:focus {
+                outline: none;
+            }
+        """)
+        self.kundeSearchInput.setMinimumWidth(400)
+        self.kundeSearchContainerLayout.addWidget(self.kundeSearchInput, 1)
+
+        # Add the full container to the layout
+        self.kundeContainerLayout.addWidget(self.kundeSearchContainer)
 
         # Customer table
         self.customerTable = QtWidgets.QTableWidget(self.kundeContainer)
@@ -287,13 +354,15 @@ class Ui_CreateBillPage(object):
         # Add entity and remove last row buttons (same as Artikel)
         self.kundeButtonsHorizontalLayout = QtWidgets.QHBoxLayout()
         self.addKundeEntityButton = QtWidgets.QPushButton(self.kundeContainer)
-        self.addKundeEntityButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
-        self.addKundeEntityButton.setText("Add Customer")
+        self.addKundeEntityButton.setFixedHeight(40)
+        # self.addKundeEntityButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
+        self.addKundeEntityButton.setText("hinzufügen")
         self.kundeButtonsHorizontalLayout.addWidget(self.addKundeEntityButton)
         
         self.removeKundeLastRowButton = QtWidgets.QPushButton(self.kundeContainer)
-        self.removeKundeLastRowButton.setIcon(QtGui.QIcon('resources/icons/x.png'))
-        self.removeKundeLastRowButton.setText("Remove last row")
+        self.removeKundeLastRowButton.setFixedHeight(40)
+        # self.removeKundeLastRowButton.setIcon(QtGui.QIcon('resources/icons/x.png'))
+        self.removeKundeLastRowButton.setText("Klare Eingaben")
         self.kundeButtonsHorizontalLayout.addWidget(self.removeKundeLastRowButton)
         
         self.kundeContainerLayout.addLayout(self.kundeButtonsHorizontalLayout)
@@ -320,13 +389,11 @@ class Ui_CreateBillPage(object):
         
         self.kapitelLabel = QtWidgets.QLabel("Kapitel")
         self.kapitelInput = QtWidgets.QLineEdit(self.inputsSection)
-        self.kapitelInput.setPlaceholderText("Kapitel")
         self.kapitelUnterkapitelLayout.addWidget(self.kapitelLabel)
         self.kapitelUnterkapitelLayout.addWidget(self.kapitelInput)
 
         self.unterkapitelLabel = QtWidgets.QLabel("Unterkapitel")
         self.unterkapitelInput = QtWidgets.QLineEdit(self.inputsSection)
-        self.unterkapitelInput.setPlaceholderText("Unterkapitel")
         self.kapitelUnterkapitelLayout.addWidget(self.unterkapitelLabel)
         self.kapitelUnterkapitelLayout.addWidget(self.unterkapitelInput)
         self.inputsSectionLayout.addLayout(self.kapitelUnterkapitelLayout)
@@ -337,21 +404,18 @@ class Ui_CreateBillPage(object):
         # New Name Input Added Here
         self.artikelNameLabel = QtWidgets.QLabel("Name")
         self.artikelNameInput = QtWidgets.QLineEdit(self.inputsSection)
-        self.artikelNameInput.setPlaceholderText("Name")
         self.preisRabattLayout.addWidget(self.artikelNameLabel)
         self.preisRabattLayout.addWidget(self.artikelNameInput)
 
         # Existing Preis netto Input
         self.preisNettoLabel = QtWidgets.QLabel("Preis netto")
         self.preisNettoInput = QtWidgets.QLineEdit(self.inputsSection)
-        self.preisNettoInput.setPlaceholderText("Preis netto")
         self.preisRabattLayout.addWidget(self.preisNettoLabel)
         self.preisRabattLayout.addWidget(self.preisNettoInput)
 
         # Existing Rabatt in % Input
         self.rabattLabel = QtWidgets.QLabel("Rabatt in %")
         self.rabattInput = QtWidgets.QLineEdit(self.inputsSection)
-        self.rabattInput.setPlaceholderText("Rabatt in %")
         self.preisRabattLayout.addWidget(self.rabattLabel)
         self.preisRabattLayout.addWidget(self.rabattInput)
         self.inputsSectionLayout.addLayout(self.preisRabattLayout)
@@ -361,7 +425,6 @@ class Ui_CreateBillPage(object):
         
         self.mengeLabel = QtWidgets.QLabel("Menge")
         self.mengeInput = QtWidgets.QLineEdit(self.inputsSection)
-        self.mengeInput.setPlaceholderText("Menge")
         self.mengeInput.setText("1")
         self.mengeEinheitLayout.addWidget(self.mengeLabel)
         self.mengeEinheitLayout.addWidget(self.mengeInput)
@@ -391,7 +454,6 @@ class Ui_CreateBillPage(object):
 
         self.summeNettoLabel = QtWidgets.QLabel("Summe Netto")
         self.summeNettoInput = QtWidgets.QLineEdit(self.inputsSection)
-        self.summeNettoInput.setPlaceholderText("Summe Netto")
         self.mengeEinheitLayout.addWidget(self.summeNettoLabel)
         self.mengeEinheitLayout.addWidget(self.summeNettoInput)
 
@@ -406,12 +468,88 @@ class Ui_CreateBillPage(object):
         self.artikelContainerLayout.setSpacing(10)  # Remove space between elements
         self.artikelContainerLayout.setAlignment(QtCore.Qt.AlignTop)  # Center the content
 
-        # Search input and product table
-        self.artikelSearchInput = QtWidgets.QLineEdit(self.artikelContainer)
-        self.artikelSearchInput.setPlaceholderText("Search Product Name")
+        # --- Styled search container for Produkt (Artikel) ---
+        self.artikelSearchContainer = QtWidgets.QWidget(self.artikelContainer)
+        self.artikelSearchContainer.setFixedHeight(60)
+        self.artikelSearchContainer.setStyleSheet("""
+            QWidget {
+                background-color: #e0e0e0;
+                border-radius: 20px;
+            }
+        """)
+        self.artikelSearchContainerLayout = QtWidgets.QHBoxLayout(self.artikelSearchContainer)
+        self.artikelSearchContainerLayout.setContentsMargins(12, 6, 12, 6)
+        self.artikelSearchContainerLayout.setSpacing(8)
+
+        # Search icon
+        searchIconLabelArtikel = QtWidgets.QLabel()
+        searchIconLabelArtikel.setFixedSize(28, 28)
+        searchIconLabelArtikel.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Load icon
+        iconPath = "resources/icons/search_blue.png"
+        pixmap = QtGui.QPixmap(iconPath)
+
+        if pixmap.isNull():
+            import os
+            absolute_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), iconPath)
+            pixmap = QtGui.QPixmap(absolute_path)
+
+        if pixmap.isNull():
+            searchIconLabelArtikel.setText("🔍")
+            searchIconLabelArtikel.setStyleSheet("""
+                QLabel {
+                    color: #666;
+                    font-size: 16px;
+                    background: transparent;
+                }
+            """)
+        else:
+            scaledPixmap = QtGui.QPixmap(22, 22)
+            scaledPixmap.fill(QtCore.Qt.transparent)
+            painter = QtGui.QPainter(scaledPixmap)
+            painter.setRenderHint(QtGui.QPainter.Antialiasing)
+            painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+            painter.drawPixmap(
+                0, 0, 22, 22,
+                pixmap.scaled(22, 22, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+            )
+            painter.end()
+            searchIconLabelArtikel.setPixmap(scaledPixmap)
+
+        searchIconLabelArtikel.setStyleSheet("""
+            QLabel {
+                background: transparent;
+                padding: 0px;
+                margin: 0px;
+            }
+        """)
+
+        self.artikelSearchContainerLayout.addWidget(searchIconLabelArtikel)
+        self.artikelSearchContainerLayout.addSpacing(8)
+
+        # Styled artikel search input
+        self.artikelSearchInput = QtWidgets.QLineEdit()
+        self.artikelSearchInput.setPlaceholderText("Produkt suchen")
         self.artikelSearchInput.setObjectName("artikelSearch")
-        self.artikelContainerLayout.addWidget(self.artikelSearchInput)
-        
+        self.artikelSearchInput.setStyleSheet("""
+            QLineEdit {
+                background-color: white;
+                border: none;
+                border-radius: 12px;
+                padding: 8px 12px;
+                font-size: 14px;
+                color: #333;
+            }
+            QLineEdit:focus {
+                outline: none;
+            }
+        """)
+        self.artikelSearchInput.setMinimumWidth(400)
+        self.artikelSearchContainerLayout.addWidget(self.artikelSearchInput, 1)
+
+        # Add the full container to the layout
+        self.artikelContainerLayout.addWidget(self.artikelSearchContainer)
         self.productTable = QtWidgets.QTableWidget(self.artikelContainer)
         self.productTable.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.productTable.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
@@ -430,21 +568,25 @@ class Ui_CreateBillPage(object):
         # Add entity and remove last row buttons on the same horizontal line
         self.buttonsHorizontalLayout = QtWidgets.QHBoxLayout()
         self.addEntityButton = QtWidgets.QPushButton(self.artikelContainer)
-        self.addEntityButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
-        self.addEntityButton.setText("Add entity")
+        # self.addEntityButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
+        self.addEntityButton.setFixedHeight(40)
+        self.addEntityButton.setText("hinzufügen")
         self.buttonsHorizontalLayout.addWidget(self.addEntityButton)
         
         self.removeLastRowButton = QtWidgets.QPushButton(self.artikelContainer)
-        self.removeLastRowButton.setIcon(QtGui.QIcon('resources/icons/x.png'))
-        self.removeLastRowButton.setText("Remove last row")
+        self.removeLastRowButton.setFixedHeight(40)
+
+        # self.removeLastRowButton.setIcon(QtGui.QIcon('resources/icons/x.png'))
+        self.removeLastRowButton.setText("Rückgängig")
         self.buttonsHorizontalLayout.addWidget(self.removeLastRowButton)
         
 
-        # Add this code in the setupUi method of Ui_CreateBillPage
-        self.addBatchButton = QtWidgets.QPushButton(self.artikelContainer)
-        self.addBatchButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
-        self.addBatchButton.setText("Add Products by Batch")
-        self.buttonsHorizontalLayout.addWidget(self.addBatchButton)  # Assuming verticalLayout contains buttons
+        # # Add this code in the setupUi method of Ui_CreateBillPage
+        # self.addBatchButton = QtWidgets.QPushButton(self.artikelContainer)
+        # self.addBatchButton.setFixedHeight(40)
+        # # self.addBatchButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
+        # self.addBatchButton.setText("viele Produkte hinzufügen")
+        # self.buttonsHorizontalLayout.addWidget(self.addBatchButton)  # Assuming verticalLayout contains buttons
 
 
         self.artikelContainerLayout.addLayout(self.buttonsHorizontalLayout)
@@ -452,16 +594,159 @@ class Ui_CreateBillPage(object):
         self.artikelLayout.addWidget(self.artikelContainer)
         self.inputsStackedWidget.addWidget(self.artikelPage)
 
-        # Export button (only for allgemein and kunde tabs)
-        self.exportButton = QtWidgets.QPushButton("Export to PDF", self.leftWidget)
-        self.exportButton.setObjectName("exportButton")
-        self.leftLayout.addWidget(self.exportButton)
-        
+        # # Create a horizontal layout for the buttons
+        # self.buttonLayout = QtWidgets.QHBoxLayout()
+
+        # # Create a horizontal layout for buttons
+        # self.buttonLayout = QtWidgets.QHBoxLayout()
+
+        # # Export button
+        # self.exportButton = QtWidgets.QPushButton("Als PDF exportieren", self.leftWidget)
+        # self.exportButton.setObjectName("exportButton")
+        # self.exportButton.setStyleSheet("background-color: #6887b6; ")
+        # self.buttonLayout.addWidget(self.exportButton)
+
+        # # Save order button
+        # self.saveOrderButton = QtWidgets.QPushButton("Speichern", self.leftWidget)
+        # self.saveOrderButton.setObjectName("saveOrderButton")
+        # self.saveOrderButton.setStyleSheet("background-color: #6887b6;")
+        # self.buttonLayout.addWidget(self.saveOrderButton)
+
+        # # Print button
+        # self.printButton = QtWidgets.QPushButton("Drucken", self.leftWidget)
+        # self.printButton.setObjectName("printButton")
+        # self.printButton.setStyleSheet("background-color: #6887b6;")
+        # self.buttonLayout.addWidget(self.printButton)
+
+        # # Add the horizontal button layout to the main vertical layout
+        # self.leftLayout.addLayout(self.buttonLayout)
+
+         # Add left widget to the main horizontal layout
         self.horizontalLayout.addWidget(self.leftWidget)
-        
-        # Right half: PDF viewer
-        self.pdfViewer = PDFViewerWidget(CreateBillPage)
-        self.horizontalLayout.addWidget(self.pdfViewer)
+
+
+        # Right half: Create a container widget for the PDF viewer and buttons
+        self.rightContainer = QtWidgets.QWidget(CreateBillPage)
+        self.rightLayout = QtWidgets.QVBoxLayout(self.rightContainer)
+        self.rightLayout.setContentsMargins(0, 0, 0, 0)  # Set left, top, right, bottom margins
+
+        # PDF viewer container
+        self.pdfViewerContainer = QtWidgets.QWidget(self.rightContainer)
+        self.pdfViewerLayout = QtWidgets.QVBoxLayout(self.pdfViewerContainer)
+        self.pdfViewer = PDFViewerWidget(self.pdfViewerContainer)
+        self.pdfViewerLayout.addWidget(self.pdfViewer)
+        self.rightLayout.addWidget(self.pdfViewerContainer)
+
+        # Buttons container
+        self.rightButtonsContainer = QtWidgets.QWidget(self.rightContainer)
+        self.rightButtonsLayout = QtWidgets.QHBoxLayout(self.rightButtonsContainer)  # Changed to QHBoxLayout
+
+
+
+        # Batch button (icon only, square, with background color)
+        self.batchButton = QtWidgets.QPushButton(self.rightButtonsContainer)
+        self.batchButton.setObjectName("batchButton")
+
+        self.batchButton.setIcon(QtGui.QIcon("resources/icons/plus_circle.png"))
+        self.batchButton.setIconSize(QtCore.QSize(46, 46))  # Set the icon size
+        self.batchButton.setFixedSize(50, 50)  # Set the button size (square)
+
+        # Hover effect
+        self.batchButton.setStyleSheet("""
+            QPushButton {
+            background-color: #6887b6;
+            border-radius: 15px;
+            }
+            QPushButton:hover {
+            background-color: #506c8e;  /* Slightly darker shade for hover */
+            }
+        """)
+
+        self.rightButtonsLayout.addWidget(self.batchButton)
+        self.batchButton.hide()  # Hide by default
+
+        # Show/hide batchButton depending on the current tab
+        def update_batch_button_visibility(index):
+            # index 2 is artikelPage (assuming order: 0=allgemein, 1=kunde, 2=artikel)
+            self.batchButton.setVisible(index == 2)
+
+        self.inputsStackedWidget.currentChanged.connect(update_batch_button_visibility)
+        # Set initial visibility
+        update_batch_button_visibility(self.inputsStackedWidget.currentIndex())
+
+
+        # Export button (icon only, square, with background color)
+        self.exportButton = QtWidgets.QPushButton(self.rightButtonsContainer)
+        self.exportButton.setObjectName("exportButton")
+
+        self.exportButton.setIcon(QtGui.QIcon("resources/icons/save_pdf.png"))
+        self.exportButton.setIconSize(QtCore.QSize(46, 46))  # Set the icon size
+        self.exportButton.setFixedSize(50, 50)  # Set the button size (square)
+
+        # Hover effect
+        self.exportButton.setStyleSheet("""
+            QPushButton {
+                background-color: #6887b6;
+                border-radius: 15px;
+            }
+            QPushButton:hover {
+                background-color: #506c8e;  /* Slightly darker shade for hover */
+            }
+        """)
+
+        self.rightButtonsLayout.addWidget(self.exportButton)
+
+        # Save order button (icon only, square, with background color)
+        self.saveOrderButton = QtWidgets.QPushButton(self.rightButtonsContainer)
+        self.saveOrderButton.setObjectName("saveOrderButton")
+
+        self.saveOrderButton.setIcon(QtGui.QIcon("resources/icons/save.png"))
+        self.saveOrderButton.setIconSize(QtCore.QSize(43, 43))  # Set the icon size
+        self.saveOrderButton.setFixedSize(50, 50)  # Set the button size (square)
+
+        # Hover effect
+        self.saveOrderButton.setStyleSheet("""
+            QPushButton {
+                background-color: #6887b6;
+                border-radius: 15px;
+            }
+            QPushButton:hover {
+                background-color: #506c8e;  /* Slightly darker shade for hover */
+            }
+        """)
+
+        self.rightButtonsLayout.addWidget(self.saveOrderButton)
+
+        # Print button (icon only, square, with background color)
+        self.printButton = QtWidgets.QPushButton(self.rightButtonsContainer)
+        self.printButton.setObjectName("printButton")
+
+        self.printButton.setIcon(QtGui.QIcon("resources/icons/print.png"))
+        self.printButton.setIconSize(QtCore.QSize(48, 48))  # Set the icon size
+        self.printButton.setFixedSize(50, 50)  # Set the button size (square)
+
+        # Hover effect
+        self.printButton.setStyleSheet("""
+            QPushButton {
+                background-color: #6887b6;
+                border-radius: 15px;
+            }
+            QPushButton:hover {
+                background-color: #506c8e;  /* Slightly darker shade for hover */
+            }
+        """)
+
+        self.rightButtonsLayout.addWidget(self.printButton)
+
+
+        # Center the buttons by setting alignment for the layout
+        self.rightButtonsLayout.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Add buttons container to the right layout
+        self.rightLayout.addWidget(self.rightButtonsContainer)
+
+        # Add right container to the main layout
+        self.horizontalLayout.addWidget(self.rightContainer)
 
         self.retranslateUi(CreateBillPage)
         QtCore.QMetaObject.connectSlotsByName(CreateBillPage)

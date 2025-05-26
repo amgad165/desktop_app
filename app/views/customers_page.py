@@ -16,7 +16,7 @@ class CustomersPage(QtWidgets.QWidget):
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setObjectName("mainLayout")
         # Add customersLabel at the top of the page
-        self.customersLabel = QtWidgets.QLabel("Customers List", self)
+        self.customersLabel = QtWidgets.QLabel("Kundenliste", self)
         # Add productsLabel at the top of the page
         self.customersLabel.setObjectName("customersLabel")
 
@@ -33,11 +33,89 @@ class CustomersPage(QtWidgets.QWidget):
 
 
         
-        # Search bar
-        self.searchInput = QtWidgets.QLineEdit(self)
-        self.searchInput.setPlaceholderText("Search Customers")
+        # --- Styled search container ---
+        self.searchContainer = QtWidgets.QWidget(self)
+        self.searchContainer.setFixedHeight(60)
+        self.searchContainer.setStyleSheet("""
+            QWidget {
+                background-color: #e0e0e0;
+                border-radius: 20px;
+            }
+        """)
+        self.searchContainerLayout = QtWidgets.QHBoxLayout(self.searchContainer)
+        self.searchContainerLayout.setContentsMargins(12, 6, 12, 6)
+        self.searchContainerLayout.setSpacing(8)
+
+        # Search icon
+        searchIconLabel = QtWidgets.QLabel()
+        searchIconLabel.setFixedSize(28, 28)
+        searchIconLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Load icon
+        iconPath = "resources/icons/search_blue.png"
+        pixmap = QtGui.QPixmap(iconPath)
+
+        if pixmap.isNull():
+            import os
+            absolute_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), iconPath)
+            pixmap = QtGui.QPixmap(absolute_path)
+
+        if pixmap.isNull():
+            searchIconLabel.setText("🔍")
+            searchIconLabel.setStyleSheet("""
+                QLabel {
+                    color: #666;
+                    font-size: 16px;
+                    background: transparent;
+                }
+            """)
+        else:
+            scaledPixmap = QtGui.QPixmap(22, 22)
+            scaledPixmap.fill(QtCore.Qt.transparent)
+            painter = QtGui.QPainter(scaledPixmap)
+            painter.setRenderHint(QtGui.QPainter.Antialiasing)
+            painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+            painter.drawPixmap(
+                0, 0, 22, 22,
+                pixmap.scaled(22, 22, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+            )
+            painter.end()
+            searchIconLabel.setPixmap(scaledPixmap)
+
+        searchIconLabel.setStyleSheet("""
+            QLabel {
+                background: transparent;
+                padding: 0px;
+                margin: 0px;
+            }
+        """)
+
+        self.searchContainerLayout.addWidget(searchIconLabel)
+        self.searchContainerLayout.addSpacing(8)
+
+        # Styled search input
+        self.searchInput = QtWidgets.QLineEdit()
+        self.searchInput.setPlaceholderText("Suche...")
         self.searchInput.textChanged.connect(self.filter_customers)
-        self.layout.addWidget(self.searchInput)
+        self.searchInput.setStyleSheet("""
+            QLineEdit {
+                background-color: white;
+                border: none;
+                border-radius: 12px;
+                padding: 8px 12px;
+                font-size: 14px;
+                color: #333;
+            }
+            QLineEdit:focus {
+                outline: none;
+            }
+        """)
+        self.searchInput.setMinimumWidth(400)
+        self.searchContainerLayout.addWidget(self.searchInput, 1)
+
+        # Add searchContainer to your layout
+        self.layout.addWidget(self.searchContainer)
+
 
         # Table for customers
         self.customersTable = QtWidgets.QTableWidget(self)
@@ -51,36 +129,45 @@ class CustomersPage(QtWidgets.QWidget):
         self.customersTable.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.layout.addWidget(self.customersTable)
 
-        # Buttons for add, edit, and delete
-        self.buttonsLayout = QtWidgets.QHBoxLayout()
+        # Icon-only buttons (inside searchContainer)
 
-        # Add button with right-aligned icon and larger text
-        self.addButton = QPushButton("Add", self)
-        self.addButton.setIcon(QtGui.QIcon('resources/icons/plus.png'))
-        self.addButton.setIconSize(QtCore.QSize(17, 17))  # Set the size of the icon
-        self.addButton.setLayoutDirection(QtCore.Qt.RightToLeft)  # Icon on the right
-        self.addButton.setStyleSheet("font-size: 16px;")  # Set larger font size
+        # Spacer between search input and icons
+        self.searchContainerLayout.addStretch()
 
-        # Edit button with right-aligned icon and larger text
-        self.editButton = QPushButton("Edit ", self)
-        self.editButton.setIcon(QtGui.QIcon('resources/icons/edit.png'))
-        self.editButton.setIconSize(QtCore.QSize(16, 16))  # Set the size of the icon
-        self.editButton.setLayoutDirection(QtCore.Qt.RightToLeft)  # Icon on the right
-        self.editButton.setStyleSheet("font-size: 16px;")  # Set larger font size
+        iconBtnStyle = """
+            QPushButton {
+                background-color: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #d0d0d0;
+                border-radius: 8px;
+            }
+        """
 
+        # Add (plus) button
+        self.addButton = QtWidgets.QPushButton()
+        self.addButton.setIcon(QtGui.QIcon('resources/icons/plus_b.png'))
+        self.addButton.setIconSize(QtCore.QSize(22, 22))
+        self.addButton.setToolTip("Kunden hinzufügen")
+        self.addButton.setStyleSheet(iconBtnStyle)
+        self.searchContainerLayout.addWidget(self.addButton)
 
-        # Delete button with right-aligned icon and larger text
-        self.deleteButton = QPushButton("Delete ", self)
-        self.deleteButton.setIcon(QtGui.QIcon('resources/icons/delete.png'))
-        self.deleteButton.setIconSize(QtCore.QSize(17, 17))  # Set the size of the icon
-        self.deleteButton.setLayoutDirection(QtCore.Qt.RightToLeft)  # Icon on the right
-        self.deleteButton.setStyleSheet("font-size: 16px;")  # Set larger font size
+        # Edit (pencil) button
+        self.editButton = QtWidgets.QPushButton()
+        self.editButton.setIcon(QtGui.QIcon('resources/icons/edit_b.png'))
+        self.editButton.setIconSize(QtCore.QSize(20, 20))
+        self.editButton.setToolTip("Kunden bearbeiten")
+        self.editButton.setStyleSheet(iconBtnStyle)
+        self.searchContainerLayout.addWidget(self.editButton)
 
-        # Add buttons to layout
-        self.buttonsLayout.addWidget(self.addButton)
-        self.buttonsLayout.addWidget(self.editButton)
-        self.buttonsLayout.addWidget(self.deleteButton)
-        self.layout.addLayout(self.buttonsLayout)
+        # Delete (trash) button
+        self.deleteButton = QtWidgets.QPushButton()
+        self.deleteButton.setIcon(QtGui.QIcon('resources/icons/delete_b.png'))
+        self.deleteButton.setIconSize(QtCore.QSize(22, 22))
+        self.deleteButton.setToolTip("Kunden löschen")
+        self.deleteButton.setStyleSheet(iconBtnStyle)
+        self.searchContainerLayout.addWidget(self.deleteButton)
 
         self.retranslateUi()
         self.load_customers()
@@ -130,13 +217,13 @@ class CustomersPage(QtWidgets.QWidget):
     def edit_customer(self):
         selected_row = self.customersTable.currentRow()
         if selected_row < 0:
-            QMessageBox.warning(self, "Edit Error", "Please select a customer to edit.")
+            QMessageBox.warning(self, "Bearbeitungsfehler", "Bitte wählen Sie einen Kunden zur Bearbeitung aus.")
             return
         customer_id = self.customersTable.item(selected_row, 1).text()  # Assuming "Nummer" (Number) is in the 2nd column
         customer = session.query(Customer).filter_by(nummer=customer_id).first()  # Fetch customer from database
 
         if not customer:
-            QMessageBox.warning(self, "Edit Error", "Customer not found.")
+            QMessageBox.warning(self, "Bearbeitungsfehler", "Kunde nicht gefunden.")
             return
         
         dialog = CustomerDialog(self, customer)
@@ -151,17 +238,17 @@ class CustomersPage(QtWidgets.QWidget):
     def delete_customer(self):
         selected_row = self.customersTable.currentRow()
         if selected_row < 0:
-            QMessageBox.warning(self, "Delete Error", "Please select a customer to delete.")
+            QMessageBox.warning(self, "Löschfehler", "Bitte wählen Sie einen Kunden zum Löschen aus.")
             return
         customer_id = self.customersTable.item(selected_row, 1).text()  # Assuming "Nummer" (Number) is in the 2nd column
         customer = session.query(Customer).filter_by(nummer=customer_id).first()  # Fetch customer from database
 
         if not customer:
-            QMessageBox.warning(self, "Delete Error", "Customer not found.")
+            QMessageBox.warning(self, "Löschfehler", "Kunde nicht gefunden.")
             return
 
-        reply = QMessageBox.question(self, 'Delete Confirmation',
-                                     "Are you sure you want to delete this customer?",
+        reply = QMessageBox.question(self, 'Löschbestätigung',
+                                     "Sind Sie sicher, dass Sie diesen Kunden löschen möchten?",
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             session.delete(customer)
@@ -175,9 +262,12 @@ class CustomerDialog(QDialog):
         self.setupUi()
 
     def setupUi(self):
-        self.setWindowTitle("Customer Details")
+        self.setWindowTitle("Kundendetails")
         self.setModal(True)
         layout = QFormLayout(self)
+
+        # Style for labels
+        label_style = "color: white; font-size: 14px;"
 
         # Fields
         self.numberEdit = QLineEdit(self)
@@ -202,11 +292,14 @@ class CustomerDialog(QDialog):
             ("Comment", self.commentEdit),
         ]
 
-        for label, field in fields:
+        for label_text, field in fields:
+            label = QtWidgets.QLabel(label_text)
+            label.setStyleSheet(label_style)
             layout.addRow(label, field)
 
-        self.saveButton = QPushButton("Save", self)
-        self.cancelButton = QPushButton("Cancel", self)
+        # Buttons
+        self.saveButton = QPushButton("Speichern", self)
+        self.cancelButton = QPushButton("Stornieren", self)
         button_layout = QVBoxLayout()
         button_layout.addWidget(self.saveButton)
         button_layout.addWidget(self.cancelButton)

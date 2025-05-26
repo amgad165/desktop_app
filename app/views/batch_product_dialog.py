@@ -18,6 +18,7 @@ class BatchProductDialog(QDialog):
         self.text_area = QTextEdit()
         self.text_area.setPlaceholderText("Paste products here...")
         left_layout.addWidget(self.text_area)
+        self.text_area.setStyleSheet("background-color: #6887b6;")
 
         self.generate_button = QPushButton("Generate Suggestions")
         self.generate_button.clicked.connect(self.on_generate_suggestions)

@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import QApplication
 from app.views.main_window import MainWindow
 import os
 from PyQt5.QtGui import QFontDatabase, QFont
+from app.controllers.license_manager import is_license_active, activate_license
+from PyQt5.QtWidgets import QInputDialog, QMessageBox
 
 def load_stylesheet(file_path):
     with open(file_path, 'r') as file:
@@ -31,36 +33,31 @@ def load_custom_fonts():
 
 def main():
     app = QApplication(sys.argv)
-    
-    # Load all custom fonts
-    loaded_fonts = load_custom_fonts()  # Get a list of all loaded fonts
 
-    print("Available custom fonts:", loaded_fonts)
+    # Check if the license is active
+    if not is_license_active():
+        license_key, ok = QInputDialog.getText(None, "License Activation", "Enter your license key:")
+        if ok and license_key:
+            if activate_license(license_key):
+                QMessageBox.information(None, "Success", "License activated successfully.")
+            else:
+                QMessageBox.critical(None, "Error", "Invalid or already used license key. Exiting application.")
+                sys.exit(1)
+        else:
+            sys.exit(1)
 
-    # Optionally, choose one font from the loaded fonts
-    if "Rubik" in loaded_fonts:
-        custom_font = QFont("Rubik", 9)
-    else:
-        custom_font = QFont("Tahoma", 10)  # Fallback font if "Oswald" is not loaded
+    # Proceed with application launch
+    loaded_fonts = load_custom_fonts()
+    app.setFont(QFont("Rubik", 9) if "Rubik" in loaded_fonts else QFont("Arial", 10))
 
-    app.setFont(custom_font)  # Optionally, apply it globally or to specific widgets
-
-    # Load and apply stylesheet
     stylesheet = load_stylesheet('resources/styles/style.qss')
     app.setStyleSheet(stylesheet)
-    
-    # Create the MainWindow instance
+
     window = MainWindow()
-    
-    # Set initial opacity to 0 (fully transparent)
     window.fade_effect.setOpacity(0)
-    
-    # Show the MainWindow
     window.show()
-    
-    # Start the fade-in animation
     window.fade_animation.start()
-    
+
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
